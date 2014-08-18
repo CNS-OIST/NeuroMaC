@@ -32,7 +32,7 @@ def code_tuple(p):
 def decode_tuple(p):
     return (np.array(p[0]),p[1]) 
         
-class Subvolume_Agent2(object) :
+class Subvolume_Agent(object) :
     def __init__(self,num,cfg_file="test_config.cfg") :
         self.num=num
         self.active_fronts = []
@@ -426,8 +426,6 @@ class Subvolume_Agent2(object) :
             print e
             time.sleep(20)
          
->>>>>>> august:Subvolume2.py
-
     def _is_front_valid(self,front,check_synapses=False):
         ret = True
         syn_locs = []
@@ -548,7 +546,7 @@ class Subvolume_Agent2(object) :
         return ret
 
 def start(num,cfg_file) :
-    sv = Subvolume_Agent2(num,cfg_file) 
+    sv = Subvolume_Agent(num,cfg_file) 
                                 
 if __name__=="__main__":
     sv = Subvolume_Agent(int(sys.argv[1]))        
