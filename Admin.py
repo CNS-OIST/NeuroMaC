@@ -440,10 +440,10 @@ if __name__=="__main__" :
     proxy.start()
     time.sleep(1) # can I do this in a smarter way? What for a signal that the proxy is ready?
     
-    import Subvolume2
+    import Subvolume
     svs = []
     for i in range(1,no+1) :
-        p = Process(target=Subvolume2.start,args=(i,cfg_file))
+        p = Process(target=Subvolume.start,args=(i,cfg_file))
         svs.append(p)
         svs[-1].start()
     print "Admin going to start with cfg_file: ", cfg_file
