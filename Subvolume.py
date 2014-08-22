@@ -252,7 +252,7 @@ class Subvolume_Agent(object) :
             new_c[key] = pos_only
         return new_c    
 
-    def _perform_update(self,debug_mem=True) :
+    def _perform_update(self,debug_mem=False) :
         # real deal
         merged_constellation = copy.deepcopy(self.static_constellation)
         merged_constellation = self._merge_constellations(merged_constellation,self.dynamic_constellation)
