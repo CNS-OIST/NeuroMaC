@@ -18,7 +18,7 @@ Run the example by executing the prepared bash script::
 This script will do several things: 
 
 1. Run the model. Running the model generates a SQL database \
-   containing all generated structures. 
+   containing all generated structures.
 2. Generate one SWC-file of the produced structure
 3. Generate a movie of the *development* of the structure.
 4. Generate two plots of the produced structure with and without \
@@ -71,11 +71,11 @@ covers the rest.  Here five initial branches are started. Afterwards \
 a front elongates with purely random angles.
 
 - :code:`rnd_dir = unit_sample_on_sphere()`: Get a unit length random\
-3D vector.
+   3D vector.
 - :code:`new_pos = normalize_length(rnd_dir,L_NORM*5)`: Scale a vector \
-to a length of :code:`L_NORM*5`.
+   to a length of :code:`L_NORM*5`.
 - :code:`new_front = prepare_next_front(front,new_pos,set_radius=1.0,add_order=True)`: \
-Create the next front.
+   Create the next front.
 
 .. warning:: :code:`extend_front()` always has to return a list of fronts. \
    If only a single front is returned (as happens for elongations), return a \
