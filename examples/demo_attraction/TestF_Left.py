@@ -2,7 +2,6 @@ import numpy as np
 
 from growth_procs import unit_sample_on_sphere,\
      direction_to,\
-     gradient_to,\
      normalize_length,\
      get_entity,\
      prepare_next_front
