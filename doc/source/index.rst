@@ -18,7 +18,7 @@ NeuroMaC's user manual and documentation
 .. note:: Currenly, a prototype of NeuroMaC is implemented in Python. This version is a proof-of-principle and nothing beyond that. This prototype has many limitations and we are working towards a non-prototype version, which should be released in the next year. The current prototype code is freely available as well as the models
 
 Contents
---------
+========
 
 .. toctree::
    :maxdepth: 2

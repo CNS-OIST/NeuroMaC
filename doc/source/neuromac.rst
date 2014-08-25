@@ -1,6 +1,9 @@
 NeuroMac overview
 =================
 
+Installation
+------------
+
 Design requirements
 -------------------
 
