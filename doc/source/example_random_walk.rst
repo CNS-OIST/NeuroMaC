@@ -3,7 +3,7 @@ Random walk
 
 *Not truly a random walk.* Rather, several branches grow from the soma, \
 start of straight before orientating themselves randomly. \
-Consequently, the branching do not grow for long as they will inevitably \
+Consequently, the branches do not grow for long as they will inevitably \
 bump into one another. The resultant structural overlaps are detected \
 by NeuroMac and cause the branches to terminate.
 
@@ -12,14 +12,17 @@ Run code
 
 Run the example by executing the prepared bash script::
   
-   cd examples # from now I assume you're in the examples directory
+   cd examples # or from wherever you came. from now I assume you're in the examples directory
    ./run_random_walk.py
 
-This script will do three things: 1. Run the model. Running the model \
-generates a SQL database containing all generated structures. 2. \
-Generate one SWC-file of the produced structure, 3. Generate a movie \
-of the *development* of the structure, 4. Generate two plots of the \
-produced structure with and without radii, respectively.
+This script will do several things: 
+
+1. Run the model. Running the model generates a SQL database \
+   containing all generated structures. 
+2. Generate one SWC-file of the produced structure
+3. Generate a movie of the *development* of the structure.
+4. Generate two plots of the produced structure with and without \
+   radii, respectively.
 
 The following files will be produced: ::
 
@@ -35,10 +38,10 @@ Implementation details
 
 The user has to write two files: a configuration file and a file \
 containing the growth cones. The configuration file \
-(:code:`random_walk/random_walk.cfg`) sets of the brain volume to simulate \
-as well as which structures to grow in accordance to a specified set \
-of rules. Also, the configuration file contains some parameters for \
-NeuroMaC itself.
+(:code:`random_walk/random_walk.cfg`) defines properties of the brain 
+volume to simulate as well as which structures to grow in accordance \
+to a specified set of rules. Also, the configuration file contains \
+some parameters for NeuroMaC itself.
 
 .. todo:: Link to a page detailing the configuration file
 
