@@ -1,3 +1,5 @@
+.. _apis:
+
 Public API
 ==========
 
@@ -9,7 +11,9 @@ Data structure
    :undoc-members:
    :show-inheritance:
 
-Growth-cone /Front helper functions
+.. _helper-functions:
+
+switch-Front helper functions
 -----------------------------------
 
 .. automodule:: growth_procs

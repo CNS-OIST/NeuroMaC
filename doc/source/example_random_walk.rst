@@ -12,10 +12,10 @@ Run code
 
 Run the example by executing the prepared bash script::
   
-   cd examples # or from wherever you came. from now I assume you're in the examples directory
+   cd examples # Or from wherever you came. From now I assume you're in the examples directory
    ./run_random_walk.py
 
-This script will do several things: 
+This script (as well as all further example scripts) will do several things: 
 
 1. Run the model. Running the model generates a SQL database \
    containing all generated structures.

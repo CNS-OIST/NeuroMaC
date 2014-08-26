@@ -1,5 +1,6 @@
 import time,copy
 import numpy as np
+from front import Front
 
 compute_exp_decay_factor = lambda i,d,x : i*np.exp(-d*x)
 
@@ -57,7 +58,7 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
 
     Parameters
     ----------
-    front : :class:`Front`
+    front : :py:class:`front.Front`
     constellation : dict of list of np.array
        A "point-only" constellation. That is, entries in this dict are \
        lists of 3D np.array vectors
@@ -112,7 +113,7 @@ def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_orde
 
     Parameters
     ----------
-    front : :class:`Front`
+    front : :py:class:`front.Front`
     new_pos : np.array
        New position in 3D space
     radius_factor : float
@@ -127,7 +128,7 @@ def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_orde
 
     Returns
     -------
-    new_front : :class:`Front`
+    new_front : :py:class:`front.Front`
        
     """
     new_front = copy.deepcopy(front)
@@ -168,7 +169,7 @@ def direction_to(front,list_of_others,what="average") :
 
     Parameters
     ----------
-    front : :class:`Front`
+    front : :py:class:`front.Front`
        Front to be used as the origin (starting point) of the direction \
        vector
     list_of_others : list
@@ -211,7 +212,7 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
 
     Parameters
     -----------
-    front : :class:`Front`
+    front : :py:class:`front.Front`
        Front to be used as the origin (starting point) of the direction \
        vector
     list_of_others : list
