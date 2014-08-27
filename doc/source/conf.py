@@ -18,7 +18,7 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 # -- General configuration ------------------------------------------------
 
@@ -30,9 +30,16 @@ import os
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
+    'numpydoc',
+    'matplotlib.sphinxext.plot_directive',
+    'matplotlib.sphinxext.mathmpl',
+    'matplotlib.sphinxext.only_directives',
+    'matplotlib.sphinxext.plot_directive',
+    'matplotlib.sphinxext.ipython_directive'    
 ]
 
 todo_include_todos=True
@@ -105,7 +112,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinxdoc'
+html_theme = 'default'#'sphinxdoc'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -337,3 +344,5 @@ epub_exclude_files = ['search.html']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
+
+autodoc_member_order = 'bysource'

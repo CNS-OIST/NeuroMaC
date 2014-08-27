@@ -3,14 +3,54 @@ import numpy as np
 import time # only for testing
 
 class Front(object) :
+    """
+    Key component of NeuroMac. A Front is a phenomenological \
+    growth cone with a dual character:
+
+    - A Front is a point in space with a radius. When connected \
+       to another Front, a frustrum (or cylinder) is created.
+    - A Front is a phenomenological growth cone that contains a \
+       set of growth rules.
+
+    Each Front its own set of rules expressed in a Python file \
+    that listed in the algo_name variable. Initially, a \
+    neuronal structure consists of one Front but later, when a structure \
+    develops by simultaneous expanding of multiple front, each front \
+    can contain different growth-rules.
+
+    .. warning:: This code is not to be changed and is directly called \
+       by NeuroMaC
+    """
     def __init__(self,entity_name,algo_name,xyz,radius,\
                  path_length,order) :
+        """
+        Constructor
+                 
+        Parameters
+        ----------
+        entity_name : string
+        algo_name : string
+           File name containing the growth rules must be named :code:`<algo_name>.py`. \
+           It's this name that is also specified in the configuration file.
+        xyz : np.array
+           3D vector
+        radius : float
+        """
+        #: The name given to and entity
+        #: This name is to be used to query the substrate
         self.entity_name = entity_name
+        #: Growth-rules to use
         self.algo_name = algo_name
+        #: 3D location
         self.xyz = xyz
+        #: Radius of the front
+        #: Consecutive fronts form a frustrum or cylinder
         self.radius = radius
+        #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.path_length= path_length
+        #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.order = order
+        #:  SWC-type as define in Cannon et al 1998
         self.swc_type = 7 # SWC-type field
         self.soma_pos =None
         self.parent = None
@@ -57,7 +97,31 @@ class Front(object) :
         return hash(self.__key())
     
     def extend_front(self,seed,constellation,virtual_substrate={}) :
-        print "extend_Front from Front.py"
+        """
+        Main function. Outsources the execution to the actual growth-rules \
+        specified in the configuration file (:code:`cell_type_x` > \
+        :code:`algorithm`).
+
+        See :ref:`implement-rules`
+
+        .. note:: This function is not to be modified and is only used \
+        by framework code (Subvolume.py)
+
+        Parameters
+        ----------
+        seed : int
+        constellation : dict of list of np.array
+        virtual_substrate : dict of list
+
+        Returns
+        -------
+        front : :class:`Front`
+           List of fronts that are the "extension" of the current front. \
+           By convention, an empty list of None represents a terminating \
+           front. A list with one or two entries represents an elongating =\
+           or a branching front, respectively. One exception can be the \
+           soma from which multiple new fronts can sprout.
+        """
 
         # process the virtual substrate information and set variable in "self"
         for key in virtual_substrate.keys():

@@ -1,9 +1,18 @@
 import time,copy
 import numpy as np
+from front import Front
 
 compute_exp_decay_factor = lambda i,d,x : i*np.exp(-d*x)
 
 def unit_sample_on_sphere() :
+    """
+    Sample a random point on a sphere with :math:`r=1`
+    
+    Returns
+    -------
+    v : np.array
+       Unit-length vector originating from [0,0,0]
+    """
     xs = np.random.normal(size=3)
     denominator = np.sqrt(np.sum(xs**2))
     origin = np.array([0,0,0])
@@ -11,6 +20,26 @@ def unit_sample_on_sphere() :
     return np.array(to)
 
 def get_entity(entity_name,constellation) :
+    """
+    Search for all entities with a specific name.
+
+    .. warning:: Does not yield desired results when searching for "own" \
+       entities, that is, all other components of the same entity.    
+
+    Parameters
+    ----------
+    entity_name : string
+       Name of the entity. Searching is done by :code:`string.startswith(string)`, \
+       which acts as some sort of wild card
+    constellation : dict of list of np.array
+       A "point-only" constellation. That is, entries in this dict are \
+       lists of 3D np.array vectors
+
+    Returns
+    -------
+    entities : list
+       List contains 3D positions
+    """
     entities = []
     for key in constellation.keys() :
         if key.startswith(entity_name):
@@ -18,6 +47,27 @@ def get_entity(entity_name,constellation) :
     return entities
 
 def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit=10):
+    """
+    Search for all entity components of a structure. For instance, if \
+    you want to implement self-repulsion you have to use this method.
+
+    It is implemented in such way that direct siblings and parent \
+    structures are ignored. If this would not be the case, sel-repulsion \
+    would always direct away from the parent structure and result in a \
+    straight line.
+
+    Parameters
+    ----------
+    front : :py:class:`front.Front`
+    constellation : dict of list of np.array
+       A "point-only" constellation. That is, entries in this dict are \
+       lists of 3D np.array vectors
+
+    Returns
+    -------
+    entities : list of np.array
+       List contains 3D positions
+    """
     entity_name = front.entity_name
     entities = []
     for key in constellation.keys() :
@@ -56,6 +106,31 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
     
 
 def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_order=False) :
+    """
+    Wrapper function to prepare a new front based on a new positions. \
+    This function takes care of the internal variables (:code:`path_length`) \
+    and :code:`order` of the new front to be created.
+
+    Parameters
+    ----------
+    front : :py:class:`front.Front`
+    new_pos : np.array
+       New position in 3D space
+    radius_factor : float
+       If the radius is not set, a radius_factor can be given. Then, the \
+       radius value is simply multiplied by this factor.
+    set_radius : float
+       New radius
+    add_order : boolean
+       Set to True of this front is the first of a branch (as well as \
+       at the soma, whose order=0 per NeuroMac convention while intial \
+       neurites have order=1)
+
+    Returns
+    -------
+    new_front : :py:class:`front.Front`
+       
+    """
     new_front = copy.deepcopy(front)
     new_front.parent = front
     new_front.xyz = new_pos
@@ -71,12 +146,42 @@ def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_orde
     return new_front        
 
 def normalize_length(vec,norm_L) :
+    """
+    Scale a direction vector to a given length
+
+    Parameters
+    ----------
+    vec : np.array
+       Direction vector to scale
+    norm_L : float
+       New length of the vector
+
+    Returns:
+    new_vec : np.array
+    """
     if vec == None:
         return [0,0,0]
     return vec / np.sqrt(np.sum((vec)**2)) * norm_L
 
 def direction_to(front,list_of_others,what="average") :
-    """ Determines the vector towards *some other entities*. 
+    """
+    Compute the direction vector towards *some other entities*.
+
+    Parameters
+    ----------
+    front : :py:class:`front.Front`
+       Front to be used as the origin (starting point) of the direction \
+       vector
+    list_of_others : list
+       List created by ***get_enity*** LINK
+    what : string
+       String options:
+       
+       - 'nearest': compute the direction vector to the nearest \
+          point in the list_of_others.
+       - 'average': default. TODO. Currently returns a list of direction \
+          vectors
+       -  'all':  Return a list of all direction vectors
     """
     if len(list_of_others) == 0 :
         # shouldn't this be array([0,0,0])??? No items, null vector
@@ -97,7 +202,36 @@ def direction_to(front,list_of_others,what="average") :
         return vecs
 
 def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff=0.01) :
-    """ Determines the vector towards *some other entities*. 
+    """
+    Determines the weighted vector towards *some other entities*. \
+    The length of the direction vectors is scaled according to the \
+    distance towards the "other entity", a constant weight and its \
+    distance-dependent decay constant. Decay is exponential, hence \
+    large decay factors (close to 1) behave as constant/linear decay \
+    while smaller ones (<< 1) have a strong decay.
+
+    Parameters
+    -----------
+    front : :py:class:`front.Front`
+       Front to be used as the origin (starting point) of the direction \
+       vector
+    list_of_others : list
+       List created by ***get_enity*** LINK
+    strength :  float
+       initial weight
+    decay_factor : float
+       Exponent with which the strength decays (or increases if > 1)
+    what : string
+       String options:
+       
+       - 'nearest': compute the direction vector to the nearest \
+          point in the list_of_others.
+       - 'average': default. TODO. Currently returns a list of direction \
+          vectors
+       -  'all':  Return a list of all direction vectors
+    cutoff : float
+       Minimal direction vector length. Vectors that are smaller after \
+       are discarded.
     """
     #all_vecs = direction_to(front,list_of_others,what=what)
     nearest_vec = np.array([100000000,100000000,100000000])

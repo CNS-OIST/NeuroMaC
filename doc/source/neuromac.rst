@@ -13,4 +13,10 @@ Rationale
 Implementation
 --------------
 
+Limitations
+-----------
+
+Future road-map
+---------------
+
 
