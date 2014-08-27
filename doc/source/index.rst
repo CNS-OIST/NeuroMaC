@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-NeuroMaC's user manual and documentation
-========================================
+NeuroMaC's documentation
+=========================
 
 *NeuroMaC is a phenomenological, computational framework to generate \
 large numbers of virtual neuronal morphologies (and resultant \

@@ -24,6 +24,8 @@ class Front(object) :
     def __init__(self,entity_name,algo_name,xyz,radius,\
                  path_length,order) :
         """
+        Constructor
+                 
         Parameters
         ----------
         entity_name : string
@@ -34,12 +36,21 @@ class Front(object) :
            3D vector
         radius : float
         """
+        #: The name given to and entity
+        #: This name is to be used to query the substrate
         self.entity_name = entity_name
+        #: Growth-rules to use
         self.algo_name = algo_name
+        #: 3D location
         self.xyz = xyz
+        #: Radius of the front
+        #: Consecutive fronts form a frustrum or cylinder
         self.radius = radius
+        #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.path_length= path_length
+        #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.order = order
+        #:  SWC-type as define in Cannon et al 1998
         self.swc_type = 7 # SWC-type field
         self.soma_pos =None
         self.parent = None
@@ -88,8 +99,10 @@ class Front(object) :
     def extend_front(self,seed,constellation,virtual_substrate={}) :
         """
         Main function. Outsources the execution to the actual growth-rules \
-        specified in int he configuration file (:code`cell_type_x` > \
-        :code:`algorithm`)
+        specified in the configuration file (:code:`cell_type_x` > \
+        :code:`algorithm`).
+
+        See :ref:`implement-rules`
 
         .. note:: This function is not to be modified and is only used \
         by framework code (Subvolume.py)

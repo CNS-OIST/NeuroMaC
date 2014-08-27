@@ -18,6 +18,7 @@ Below an example:
 
 Each configuration file contains at least four main sections:
 
+
 :code:`[system]`
 ~~~~~~~~~~~~~~~~
 
@@ -69,7 +70,7 @@ in cortical slices). The left-bottom corner is always :math:`[0,0,0]`.
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Statements in this block define how the total volume should be decomposed \
-into smaller blocks, whcih are subsequently parallelized by NeuroMaC.
+into smaller blocks, which are subsequently parallelized by NeuroMaC.
 
 .. note:: Currently, the volume decomposition is limited to rectangular \
    slicing of the volume.
@@ -123,9 +124,10 @@ structures.
    does not mean they will be identical as the growth-rules usually \
    also include a random component.
 
+.. _implement-rules:
 
-Front specification
---------------------
+Front growth-rule specification
+--------------------------------
 
 The second part required for running a simulation using NeuroMaC is \
 the specification of the growth-rules. Growth-rules are expressed \
@@ -144,13 +146,13 @@ contain the following: ::
        return [new_front]
 
 A front is a :py:class:`front.Front` data structure. In NeuroMaC its \
-role is double: both a physical entity in space with a location and \
-radius but as well a phenomenological implementation of a growth-cone \
-that contains the growth-rules.
+role is double: a front is both a physical entity in space with a \
+location and radius but as well a phenomenological implementation of \
+a growth-cone that contains the growth-rules.
 
 Because Python is a full programming language there are no real \
-limitations on how to implement the growth-rules. A few \
- :ref:`examples` are provided. It is strongly advised to start by \
+limitations on how to implement the growth-rules. A few  :ref:`examples` \
+are provided. It is strongly advised to start by \
 adapting an example rather than to build a set of growth-rules from \
 scratch.
 
@@ -158,7 +160,184 @@ Helper functions
 ~~~~~~~~~~~~~~~~
 
 A few helper functions are packed with NeuroMaC to ease the implementation \
-of growth-rules :ref:`apis`
+of growth-rules :ref:`helper-functions`.
 
-Front implementation
-~~~~~~~~~~~~~~~~~~~~
+Elongating a front
+~~~~~~~~~~~~~~~~~~
+
+The most trivial case of the termination of a front. In this case, the \
+:code:`extend_front()` can be empty (bad practice) or contain \
+:code:`return None` (good practice).
+
+The simplest functional case is the extension of a front. In that case \
+the user specifies the next position of the front. ::
+
+   L_EXTEND=5
+
+   def extend_front(front,seed,constellation) :
+       # Elongate: decide the next location
+       current_position = front.xyz
+
+       # extend in random direction
+       rnd_dir = unit_sample_on_sphere()
+       new_pos = normalize_length(rnd_dir,L_EXTEND)
+       new_pos = front.xyz + new_pos
+       new_front = prepare_next_front(front,new_pos,set_radius=1.0)
+       return [new_front]
+
+This snippet highlights the use of helper functions \
+:py:func:`growth_procs.unit_sample_on_sphere`, :py:func:`growth_procs.normalize_length` \
+and :py:func:`growth_procs.prepare_next_front`.
+
+Branching a front
+~~~~~~~~~~~~~~~~~
+
+Branching a front is similar to elongating a front. The difference lies \
+in the creation of two new fronts rather than one. ::
+
+   L_EXTEND=5
+
+   def extend_front(front,seed,constellation) :
+       # Elongate: decide the next location
+       current_position = front.xyz
+
+       new_fronts = []
+       for i in range(2):
+           # extend in random direction
+           rnd_dir = unit_sample_on_sphere()
+           new_pos = normalize_length(rnd_dir,L_EXTEND)
+           new_pos = front.xyz + new_pos
+           new_front = prepare_next_front(front,new_pos,set_radius=1.0)
+           new_fronts.append(new_front)
+       return new_fronts
+
+.. note:: Make sure the newly created child fronts do not overlap or \
+   NeuroMaC will terminate one of them because of illegal structural overlap.
+
+
+Interactions between structures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Suppose the following declaration of front in the configuration file \
+(taken from the :ref:`example-attraction` :: 
+
+    [cell_type_1]
+    no_seeds=1
+    algorithm = TestF_Left
+    location = [[20,50,20],[20,50,20]]  
+    soma_radius = 10
+
+    [cell_type_2]
+    no_seeds= 1
+    algorithm = TestF_Right
+    location = [[80,80,80],[80,80,80]] 
+    soma_radius = 10
+
+In this case the cell types can be used as a environmental cues. \
+A list of all entities of a certain type can be requested through the \
+helper :py:func:grwoth_procs.get_entity ::
+
+   L_EXTEND=5
+
+   def extend_front(front,seed,constellation) :
+       # query structures from another cell
+       other_entities = get_entity("cell_type_2",constellation)
+       # now, e.g., compute the direction to these structures
+       dir_to_entity = direction_to(front,other_entities,what="nearest")
+       # scale to a given length
+       new_pos = front.xyz + normalize_length(dir_to_entity,L_EXTEND)
+       new_front = prepare_next_front(front,new_pos,set_radius=1.5)
+       return [new_front]
+
+Interactions between fronts and substrate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To allow explicit interaction between a front and the surrounding \
+substrate, environmental cues have to be inserted into the simulated \
+volume. This can be done in the configuration file. ::
+
+   [substrate]
+   dim_xyz = [200.0,200.0,205.0]
+   pia = pia_point.pkl
+
+In this case a "pia" is declared in the volume. The value is a pickle \
+file containing a set of points. Below an example of how to generate \
+such a file. 
+
+.. literalinclude:: code/generate_pia.py
+    :language: python
+
+Once the volume is configured to contain this "pia" it can be referred \
+to as any other entity in the growth rules. ::
+
+   L_EXTEND=5
+
+   def extend_front(front,seed,constellation) :
+       # query structures from another cell
+       other_entities = get_entity("pia",constellation)
+       # now, e.g., compute the direction to these structures
+       dir_to_entity = direction_to(front,other_entities,what="nearest")
+       # scale to a given length
+       new_pos = front.xyz + normalize_length(dir_to_entity,L_EXTEND)
+       new_front = prepare_next_front(front,new_pos,set_radius=1.5)
+       return [new_front]
+
+Updating the substrate
+~~~~~~~~~~~~~~~~~~~~~~~
+
+NeuroMaC also features bi-directional interaction with the environment. \
+That is, fronts can leave cues in the substrate while growing. These \
+cues:
+
+- Do not have a physical extend (no overlap detection)
+- Are permanent (do not fade over time)
+- Can be accessed as any other contextual cue by other fronts
+
+The bi-directional interaction is implemented in a front's growth-rules:
+
+.. code-block:: python
+   :emphasize-lines: 8,9
+
+   L_EXTEND = 5
+
+   def extend_front(front,seed,constellation) :
+       new_pos =front.xyz + np.array([-1.0*L_EXTEND,0,0])
+       new_front = prepare_next_front(front,new_pos,set_radius=3.0)
+
+       # secrete some "entity_x"
+       if front.path_length > 40 and front.path_length < 46 :
+           return [new_front],{"substance_x":front} 
+       else :
+           return [new_front]
+
+Extending :py:class:`front.Front`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By using plain Python code to implement growth-rules, we can also exploit \
+Python specific features. For instance, a front is a regular Python \
+:code:`object`. Hence, we can dynamically add attributes (variables) to \
+a front. Two such attributes are automatically added and updated by \
+NeuroMaC, namely :code:`path_length` and :code:`order`. Other attributes \
+can be used at discretion of the end-user, for instance, to label \
+special branches that require a specific set of growth-rules as illustrated \
+in the following example.
+
+.. code-block:: python
+   :emphasize-lines: 8,9
+
+   L_EXTEND = 5
+
+   def extend_front(front,seed,constellation) :
+       if np.random.random() <0.2 :
+           front.my_label=True
+       else :
+           front.my_label=False
+
+       if front.my_label:
+           new_pos =front.xyz + np.array([-1.0*L_EXTEND,0,0])
+       else:
+           other_entities = get_entity("cell_type_2",constellation)
+           dir_to_entity = direction_to(front,other_entities,what="nearest")
+           new_pos = front.xyz + normalize_length(dir_to_entity,L_EXTEND)
+           new_front = prepare_next_front(front,new_pos,set_radius=1.5)
+       return [new_front]

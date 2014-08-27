@@ -6,15 +6,17 @@ Public API
 Data structure
 --------------
 
+
 .. automodule:: front
    :members:
    :undoc-members:
    :show-inheritance:
 
+
 .. _helper-functions:
 
-switch-Front helper functions
------------------------------------
+Front implementation helper functions
+--------------------------------------
 
 .. automodule:: growth_procs
    :members:
