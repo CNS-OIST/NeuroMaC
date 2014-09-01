@@ -6,6 +6,8 @@ framework. These users need to provide two files only. One in which \
 the brain volume to simulate is described and one in which the \
 growth-rules are expressed.
 
+.. _config-file:
+
 Configuration file
 ------------------
 

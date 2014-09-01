@@ -19,6 +19,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../../'))
+#sys.path.insert(0, os.path.abspath('extensions'))
 
 # -- General configuration ------------------------------------------------
 
@@ -39,7 +40,7 @@ extensions = [
     'matplotlib.sphinxext.mathmpl',
     'matplotlib.sphinxext.only_directives',
     'matplotlib.sphinxext.plot_directive',
-    'matplotlib.sphinxext.ipython_directive'    
+    'matplotlib.sphinxext.ipython_directive'  
 ]
 
 todo_include_todos=True
@@ -58,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'NeuroMaC'
-copyright = u'2014, B. Torben-Nielsen'
+copyright = u'2014, B. Torben-Nielsen <btorbennielsen@gmail.com>'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -135,8 +135,6 @@ Subvolume agents.
     :language: none
 
 
-
-
 Implementation details
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -147,4 +145,10 @@ Implementation details
 .. literalinclude:: ../../examples/demo_attraction/TestF_Right.py
     :linenos:
     :language: python
+
+
+.. _example-pia-attraction:
+
+Interaction between fronts and the substrate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

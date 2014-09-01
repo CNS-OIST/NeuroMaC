@@ -45,7 +45,7 @@ Contents
 Reference
 =========
 
-When using NeuroMac, please refer to the following paper:
+When using NeuroMaC, please refer to the following paper:
 
 Benjamin Torben-Nielsen & Erik De Schutter. *Context-aware modelling \
 of neuronal morphologies*. Frontiers in Neuroanatomy,  8:92. \
