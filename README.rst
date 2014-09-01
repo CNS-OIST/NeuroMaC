@@ -28,4 +28,6 @@ terms of interactions with the environment.*
   non-prototype version, which should be released in the next year. \
   The current prototype code is freely available.
 
+`Documentation <http://b-torbennielsen.home.oist.jp/neuromac/>`_
+
 Main author: `Ben Torben-Nielsen <http://b-torbennielsen.home.oist.jp/>`_
