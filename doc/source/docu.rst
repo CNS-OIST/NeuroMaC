@@ -1,10 +1,12 @@
 User manual
 ===========
 
-The vast majority of end-users does not need to modify the core \
-framework. These users need to provide two files only. One in which \
-the brain volume to simulate is described and one in which the \
-growth-rules are expressed.
+Users need to write two files: one describing the simulated volume and
+one containing the growth-rules.
+
+In this section we outline how to write both. Although, it is strongly
+recommended not to start either file from scratch but by modifying
+one of the examples (:ref:`examples`).
 
 .. _config-file:
 
@@ -35,23 +37,17 @@ entries are included
 - time_out = 10000 *[currently not used]*
 - no_cycles=30
 - out_db=demo_attraction/demo_attraction.db
-- synapse_distance = 5 *[optional]*
-- syn_db = demo_attraction/syn.db *[optional]*
 
 The :code:`seed` is used to initialize the system and for the randomized locations of \
-the initial parts of the structures to generate. All :code:`_port` \
+the initial parts of the structures to generate. All :code:`*_port` \
 entries relate to the configuration of `ZeroMQ <http://zeromq.org/>`_ \
-(also referred to as ZMQ). ZMQ is the messaging system used to implement \
+(also denoted as ZMQ). ZMQ is the messaging system used to implement \
 the multi-agent system. The configured ports are TCP/IP ports used to \
 communicate between the different components.
 
 :code:`no_cycles` defines how many times each front has to be extended. \
 :code:`out_db` specifies the location of the raw SQL output database. \
-:code:`synapse_distance` is optional and sets the maximum distance \
-between line segments (e.g., the frustum or cylinder between two \
-successive fronts) at which a synapse could form. If set, these \
-putative synapse locations will be recorded in a separate SQL \
-database named with the value from :code:`syn_db`.
+
 
 :code:`[substrate]`
 ~~~~~~~~~~~~~~~~~~~
@@ -128,51 +124,81 @@ structures.
 
 .. _implement-rules:
 
+Recording synapse locations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The location of putative synapses between *any neurites* can be recorded
+by specifying a :code:`synapse_distance` and :code:`syn_db` option in the
+:code:`[system]` section of the configuration file.
+
+- synapse_distance = 5
+- syn_db = demo_attraction/syn.db 
+
+
+:code:`synapse_distance` is optional and sets the maximum distance 
+between line segments  (e.g., the frustum or cylinder between two 
+successive fronts) in micron at which a synapse could form. If set, these 
+putative synapse locations will be recorded in a separate SQL 
+database named with the value from :code:`syn_db`.
+
+
+.. note:: Recorded synapse location are indiscriminate to the neurite type:
+          locations are recorded as long as the minimal distance between two
+          frusta belonging to some neurite is smaller than the specific
+          distance. As such, a post-processing step is required to filter
+          the synapse locations of interest.
+
+.. _neuromac-rules:
+
 Front growth-rule specification
 --------------------------------
 
-The second part required for running a simulation using NeuroMaC is \
-the specification of the growth-rules. Growth-rules are expressed \
+The second part required for running a simulation using NeuroMaC is 
+the specification of the growth-rules. Growth-rules are expressed 
 in plain Python code.
 
-The fixed part of the growth-rule is the definition so that NeuroMaC \
-knows which function to execute. As such Python growth-rule *must* \
+The fixed part of the growth-rule is the definition so that NeuroMaC 
+knows which function to execute. As such Python growth-rule *must* 
 contain the following: ::
 
    def extend_front(front,seed,constellation) :
-       # Do things, this front either branches, terminates or \
-       # elongates. In these cases either two, none or one new front \
+       # Do things, this front either branches, terminates or 
+       # elongates. In these cases either two, none or one new front 
        # has to be returned
 
        # In case of elongation
        return [new_front]
 
-A front is a :py:class:`front.Front` data structure. In NeuroMaC its \
-role is double: a front is both a physical entity in space with a \
-location and radius but as well a phenomenological implementation of \
+A front is a :py:class:`front.Front` data structure. In NeuroMaC its 
+role is double: a front is both a physical entity in space with a 
+location and radius but as well a phenomenological implementation of 
 a growth-cone that contains the growth-rules.
 
-Because Python is a full programming language there are no real \
-limitations on how to implement the growth-rules. A few  :ref:`examples` \
-are provided. It is strongly advised to start by \
-adapting an example rather than to build a set of growth-rules from \
-scratch.
+Because Python is a full programming language there are no real 
+limitations on how to implement the growth-rules. A few  :ref:`examples` 
+are provided. 
 
 Helper functions
 ~~~~~~~~~~~~~~~~
 
-A few helper functions are packed with NeuroMaC to ease the implementation \
+A few helper functions are packed with NeuroMaC to ease the implementation 
 of growth-rules :ref:`helper-functions`.
+
+Terminating a front
+~~~~~~~~~~~~~~~~~~~
+
+The most trivial case is the termination of a front. In this case, the 
+:code:`extend_front()` can be empty (bad practice) or contain 
+:code:`return []` (good practice).
 
 Elongating a front
 ~~~~~~~~~~~~~~~~~~
 
-The most trivial case of the termination of a front. In this case, the \
-:code:`extend_front()` can be empty (bad practice) or contain \
-:code:`return None` (good practice).
+The simplest functional case is the extension of a front. In that case 
+the user specifies the next position of the front. 
 
-The simplest functional case is the extension of a front. In that case \
-the user specifies the next position of the front. ::
+.. code-block:: python
+   :emphasize-lines: 8,9,11
 
    L_EXTEND=5
 
@@ -187,15 +213,18 @@ the user specifies the next position of the front. ::
        new_front = prepare_next_front(front,new_pos,set_radius=1.0)
        return [new_front]
 
-This snippet highlights the use of helper functions \
-:py:func:`growth_procs.unit_sample_on_sphere`, :py:func:`growth_procs.normalize_length` \
+This snippet highlights the use of helper functions 
+:py:func:`growth_procs.unit_sample_on_sphere`, :py:func:`growth_procs.normalize_length` 
 and :py:func:`growth_procs.prepare_next_front`.
 
 Branching a front
 ~~~~~~~~~~~~~~~~~
 
-Branching a front is similar to elongating a front. The difference lies \
-in the creation of two new fronts rather than one. ::
+Branching a front is similar to elongating a front. The difference lies 
+in the creation of two new fronts rather than one. 
+
+.. code-block:: python
+   :emphasize-lines: 7,8,14,15
 
    L_EXTEND=5
 
@@ -213,15 +242,17 @@ in the creation of two new fronts rather than one. ::
            new_fronts.append(new_front)
        return new_fronts
 
-.. note:: Make sure the newly created child fronts do not overlap or \
+.. note:: Make sure the newly created child fronts do not overlap because
    NeuroMaC will terminate one of them because of illegal structural overlap.
 
 
 Interactions between structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose the following declaration of front in the configuration file \
-(taken from the :ref:`example-attraction` :: 
+Suppose the following declaration of front in the configuration file 
+(taken from the :ref:`example-attraction`):
+
+.. code-block:: python
 
     [cell_type_1]
     no_seeds=1
@@ -235,9 +266,17 @@ Suppose the following declaration of front in the configuration file \
     location = [[80,80,80],[80,80,80]] 
     soma_radius = 10
 
-In this case the cell types can be used as a environmental cues. \
-A list of all entities of a certain type can be requested through the \
-helper :py:func:grwoth_procs.get_entity ::
+Now the distinct the cell types can be used as a environmental cues. 
+A list of all entities of a certain type can be requested through the 
+helper :py:func:`growth_procs.get_entity`. Subsequently, in case of
+attraction, the vector direction towards the other entity can be computed
+using :py:func:`growth_procs.direction_to` (or
+entity :py:func:`growth_procs.gradient_to`). The vector direction
+can be easily inverted by :math:`-1 \times vec_dir` to simulate
+repulsion.
+
+.. code-block:: python
+   :emphasize-lines: 5,7
 
    L_EXTEND=5
 
@@ -251,26 +290,31 @@ helper :py:func:grwoth_procs.get_entity ::
        new_front = prepare_next_front(front,new_pos,set_radius=1.5)
        return [new_front]
 
+.. _neuromac-interactions-front-substrate:
+
 Interactions between fronts and substrate
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To allow explicit interaction between a front and the surrounding \
-substrate, environmental cues have to be inserted into the simulated \
+To allow explicit interaction between a front and the surrounding 
+substrate, environmental cues have to be inserted into the simulated 
 volume. This can be done in the configuration file. ::
 
    [substrate]
    dim_xyz = [200.0,200.0,205.0]
    pia = pia_point.pkl
 
-In this case a "pia" is declared in the volume. The value is a pickle \
-file containing a set of points. Below an example of how to generate \
+In this case a "pia" is declared in the volume. The value is a pickle 
+file containing a set of points. Below an example of how to generate 
 such a file. 
 
 .. literalinclude:: code/generate_pia.py
     :language: python
 
-Once the volume is configured to contain this "pia" it can be referred \
-to as any other entity in the growth rules. ::
+Once the volume is configured to contain this "pia" it can be referred 
+to as any other entity in the growth rules.
+
+.. code-block:: python
+   :emphasize-lines: 5,7
 
    L_EXTEND=5
 
@@ -287,8 +331,8 @@ to as any other entity in the growth rules. ::
 Updating the substrate
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-NeuroMaC also features bi-directional interaction with the environment. \
-That is, fronts can leave cues in the substrate while growing. These \
+NeuroMaC also features bi-directional interaction with the environment. 
+That is, fronts can leave cues in the substrate while growing. These 
 cues:
 
 - Do not have a physical extend (no overlap detection)
@@ -312,20 +356,20 @@ The bi-directional interaction is implemented in a front's growth-rules:
        else :
            return [new_front]
 
-Extending :py:class:`front.Front`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Augmenting :py:class:`front.Front`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By using plain Python code to implement growth-rules, we can also exploit \
-Python specific features. For instance, a front is a regular Python \
-:code:`object`. Hence, we can dynamically add attributes (variables) to \
-a front. Two such attributes are automatically added and updated by \
-NeuroMaC, namely :code:`path_length` and :code:`order`. Other attributes \
-can be used at discretion of the end-user, for instance, to label \
-special branches that require a specific set of growth-rules as illustrated \
+By using plain Python code to implement growth-rules, we can also exploit 
+Python specific features. For instance, a front is a regular Python 
+:code:`object`. Hence, we can dynamically add attributes (variables) to 
+a front. Two such attributes are automatically added and updated by 
+NeuroMaC, namely :code:`path_length` and :code:`order`. Other attributes 
+can be used at discretion of the end-user, for instance, to label 
+special branches that require a specific set of growth-rules as illustrated 
 in the following example.
 
 .. code-block:: python
-   :emphasize-lines: 8,9
+   :emphasize-lines: 5,7,9
 
    L_EXTEND = 5
 
