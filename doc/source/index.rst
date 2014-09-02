@@ -56,9 +56,7 @@ License
 
 NeuroMac - Neuronal Morphologies and Circuits
 
-Copyright (C) 2013 Ben Torben-Nielsen,
-
-Copyright (C) 2014 Okinawa Institute of Science and Technology, Japan.,
+Copyright (C) 2014 Ben Torben-Nielsen & Okinawa Institute of Science and Technology, Japan.,
 
 NeuroMac is free software: you can redistribute it and/or modify it \
 under the terms of the GNU General Public License as published by the \
