@@ -12,6 +12,7 @@ PYTHON="python2.7"
 #  right, one curve starting at the left is attracted by the other\
 #  curve.
 time PYTHONPATH=demo_attraction/:$PYTHONPATH python ../Admin.py 2 demo_attraction/demo_attraction.cfg 
+python ../scripts/generate_SWC_data.py demo_attraction/demo_attraction.cfg demo_attraction/demo_attraction.db
 python ../scripts/helper_generate_movie.py demo_attraction/demo_attraction.cfg demo_attraction/demo_attraction.db
 $PYTHON ../scripts/generate_wire_plot.py demo_attraction/demo_attraction.cfg demo_attraction/demo_attraction.db
 $PYTHON ../scripts/generate_radii_plot.py demo_attraction/demo_attraction.cfg demo_attraction/demo_attraction.db

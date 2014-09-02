@@ -11,6 +11,7 @@ PYTHON="python2.7"
 # turns toward this cue
 
 time PYTHONPATH=update_environment/:$PYTHONPATH python ../Admin.py 1 update_environment/update_env.cfg 
+python ../scripts/generate_SWC_data.py update_environment/update_env.cfg update_environment/update.db
 python ../scripts/helper_generate_movie.py update_environment/update_env.cfg update_environment/update.db
 $PYTHON ../scripts/generate_wire_plot.py update_environment/update_env.cfg update_environment/update.db
 $PYTHON ../scripts/generate_radii_plot.py update_environment/update_env.cfg update_environment/update.db
