@@ -325,6 +325,14 @@ class Admin_Agent(object) :
                 elif message[0] == "Migrate_Front" :
                     self._process_migrate_front(message)
                     time.sleep(0.)
+                elif message[0] == "Extra_synapses" :
+                    print_with_rank("EXTRA_SYNAPSES")
+                    sender = int(message[1])
+                    syn_locs = message[2]
+                    # store putative synapse locations
+                    if self.parser.has_option("system","syn_db"):
+                        self._syn_to_db(syn_locs,sender)
+                       
         self.conn.commit()
         if self.parser.has_option("system","syn_db"):
             self.syn_conn.commit()

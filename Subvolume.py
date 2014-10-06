@@ -519,23 +519,18 @@ class Subvolume_Agent(object) :
 
         """ Migrate front (2014-10-06)
         """
-        # if not new_front.entity_name in self.all_contained_entities.keys() :
-        #     self.all_contained_entities[new_front.entity_name] = []
-        # self.all_contained_entities[new_front.entity_name].append(new_front)
-
         # check if position is occupied already
+        valid,syn_locs = self._valid_and_wiggle(new_front)
+        if valid:
+            if new_front.entity_name in self.dynamic_constellation:
+                self.dynamic_constellation[new_front.entity_name].add(new_front)
+            else:
+                self.dynamic_constellation[new_front.entity_name] = set()
+                self.dynamic_constellation[new_front.entity_name].add(new_front)
 
-
-        # # 2019-02-19
-        # if not new_front.entity_name in self.expanded_constellation :
-        #     self.expanded_constellation[new_front.entity_name] = []
-        # self.expanded_constellation[new_front.entity_name].append((new_front.xyz,new_front.radius))
-
-        # 2019-02-19
-        # 2014-08-06, back to the erratic future
-        if not new_front.entity_name in self.dynamic_constellation :
-            self.dynamic_constellation[new_front.entity_name] = set()
-        self.dynamic_constellation[new_front.entity_name].add(new_front)
+        # in case of new synapses, notify the Admin agent
+        msg = ("Extra_synapses","%06d"%self.num,syn_locs)
+        self.ppub.send_multipart(["Admin",pickle.dumps(msg)])        
         
     def _temp_to_db(self,front,c_fronts) :
         pos = front.xyz
