@@ -318,21 +318,11 @@ class Subvolume_Agent(object) :
                         If yes: ok
                         If not: wiggle a few times and check each time, if too difficut: discard front
                         """
-                        valid,syn_locs = self._is_front_valid(f,check_synapses=self.parser.has_option("system","syn_db"))
-                        attempts = 0
-                        avoidance_attempts = 0
-                        if self.parser.has_option("system","avoidance_attempts"):
-                            avoidance_attempts = self.parser.getint("system","avoidance_attempts")
-                            
-                        while valid == False and attempts < avoidance_attempts:
-                            # wiggle front.xyz a bit...
-                            noise = (2*f.radius)*np.random.random(len(f.xyz))-f.radius
-                            f.xyz = f.xyz+ noise
-                            valid,syn_locs = self._is_front_valid(f,check_synapses=self.parser.has_option("system","syn_db"))
-                            attempts = attempts + 1
-                        all_synapse_locs.extend(syn_locs)
+                        valid,syn_locs = self._valid_and_wiggle(f)
+                        
                         if valid:
                             new_fronts.append(f)
+                            all_synapse_locs.extend(syn_locs)
                             # self.my_constellation[f.entity_name].append(f.xyz)
 
                             self.dynamic_constellation[f.entity_name].add(f)
@@ -369,6 +359,21 @@ class Subvolume_Agent(object) :
 
         if debug_mem:
             self._gather_constellation_size(merged_constellation)
+
+    def _valid_and_wiggle(self,f):
+        valid,syn_locs = self._is_front_valid(f,check_synapses=self.parser.has_option("system","syn_db"))
+        attempts = 0
+        avoidance_attempts = 0
+        if self.parser.has_option("system","avoidance_attempts"):
+            avoidance_attempts = self.parser.getint("system","avoidance_attempts")
+
+        while valid == False and attempts < avoidance_attempts:
+            # wiggle front.xyz a bit...
+            noise = (2*f.radius)*np.random.random(len(f.xyz))-f.radius
+            f.xyz = f.xyz+ noise
+            valid,syn_locs = self._is_front_valid(f,check_synapses=self.parser.has_option("system","syn_db"))
+            attempts = attempts + 1
+        return valid,syn_locs
 
     def _gather_constellation_size(self,merged_constellation):
         """
@@ -507,14 +512,19 @@ class Subvolume_Agent(object) :
         
     def _add_front(self,message) :
         """
-        TODO 2014-08-05: check if front is validf, if not: wiggle until valid or refute
+        TODO 2014-08-05: check if front is valid, if not: wiggle until valid or refute
         """
         new_front = message[1]
         self.active_fronts.append(new_front)
-        
+
+        """ Migrate front (2014-10-06)
+        """
         # if not new_front.entity_name in self.all_contained_entities.keys() :
         #     self.all_contained_entities[new_front.entity_name] = []
         # self.all_contained_entities[new_front.entity_name].append(new_front)
+
+        # check if position is occupied already
+
 
         # # 2019-02-19
         # if not new_front.entity_name in self.expanded_constellation :
