@@ -264,3 +264,38 @@ be passed to the :py:func:`growth_procs.direction_to` function.
 .. literalinclude:: ../../examples/update_environment/Attracted_by.py
     :linenos:
     :language: python
+
+Miscellaneous examples
+-----------------------
+
+Forests of neurons
+~~~~~~~~~~~~~~~~~~
+
+NeuroMac offers the opportunity to generate large numbers of neurites 
+that may or may not have the same growth-rules. In this example, we
+grow a forest of neurons according to the same growth rules.
+
+This can be specified in the configuration file [here :code:`to_pia/many.cfg`]:
+
+.. literalinclude:: ../../examples/to_pia/many.cfg
+    :lines: 21-25
+    :language: none
+
+Built-in structural conflict detection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:code:`./run_intersection.sh`
+
+
+Self-avoidance
+~~~~~~~~~~~~~~
+
+:code:`./run_selfavoidance.sh`
+
+
+Gradual attraction
+~~~~~~~~~~~~~~~~~~
+
+Distance-dependent attraction
+
+:code:`./run_gradient.sh`
