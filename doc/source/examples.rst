@@ -155,6 +155,28 @@ attracted to the nearest front of the first neurite.
     :emphasize-lines: 12-14
 
 
+.. warning:: In case the volume is decomposed into many sub volumes, \
+  and attraction between fronts of non-neighboring sub volumes occurs \
+  , special piece of code needs to be added to the growth rule. In the \
+  aforementioned case, during the first update cycle an updating front \
+  cannot know anything about fronts that are in sub volumes beyond the \
+  direct neighbors. Only in the second cycle, they will receive a "summary" \
+  of all distant sub volumes. As such, during the first cycle, one has to \
+  catch the case in which no attracting/repulsive fronts are found. 
+
+  .. literalinclude:: ../../examples/demo_attraction/TestF_Left_Distant.py
+      :linenos:
+      :emphasize-lines: 13-17
+
+  In this example, we quickly fixed the problem by extending the front \
+  a little bit during the first cycle when no attraction from a distant \
+  front is felt. From the second cycle on, the front behaviour is as \
+  expected.
+
+  This example is included in the :code:`examples` directory and can be \
+  run by executing :code:`./run_distant_attraction.sh`.
+
+
 .. _example-pia-attraction:
 
 Interaction between fronts and the substrate
