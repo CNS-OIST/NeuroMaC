@@ -155,6 +155,28 @@ attracted to the nearest front of the first neurite.
     :emphasize-lines: 12-14
 
 
+.. warning:: In case the volume is decomposed into many sub volumes, \
+  and attraction between fronts of non-neighboring sub volumes occurs \
+  , special piece of code needs to be added to the growth rule. In the \
+  aforementioned case, during the first update cycle an updating front \
+  cannot know anything about fronts that are in sub volumes beyond the \
+  direct neighbors. Only in the second cycle, they will receive a "summary" \
+  of all distant sub volumes. As such, during the first cycle, one has to \
+  catch the case in which no attracting/repulsive fronts are found. 
+
+  .. literalinclude:: ../../examples/demo_attraction/TestF_Left_Distant.py
+      :linenos:
+      :emphasize-lines: 13-17
+
+  In this example, we quickly fixed the problem by extending the front \
+  a little bit during the first cycle when no attraction from a distant \
+  front is felt. From the second cycle on, the front behaviour is as \
+  expected.
+
+  This example is included in the :code:`examples` directory and can be \
+  run by executing :code:`./run_distant_attraction.sh`.
+
+
 .. _example-pia-attraction:
 
 Interaction between fronts and the substrate
@@ -242,3 +264,38 @@ be passed to the :py:func:`growth_procs.direction_to` function.
 .. literalinclude:: ../../examples/update_environment/Attracted_by.py
     :linenos:
     :language: python
+
+Miscellaneous examples
+-----------------------
+
+Forests of neurons
+~~~~~~~~~~~~~~~~~~
+
+NeuroMac offers the opportunity to generate large numbers of neurites 
+that may or may not have the same growth-rules. In this example, we
+grow a forest of neurons according to the same growth rules.
+
+This can be specified in the configuration file [here :code:`to_pia/many.cfg`]:
+
+.. literalinclude:: ../../examples/to_pia/many.cfg
+    :lines: 21-25
+    :language: none
+
+Built-in structural conflict detection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:code:`./run_intersection.sh`
+
+
+Self-avoidance
+~~~~~~~~~~~~~~
+
+:code:`./run_selfavoidance.sh`
+
+
+Gradual attraction
+~~~~~~~~~~~~~~~~~~
+
+Distance-dependent attraction
+
+:code:`./run_gradient.sh`
