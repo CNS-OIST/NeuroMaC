@@ -330,8 +330,8 @@ class Admin_Agent(object) :
                     sender = int(message[1])
                     syn_locs = message[2]
                     # store putative synapse locations
-                    # if self.parser.has_option("system","syn_db"):
-                    #     self._syn_to_db(syn_locs,sender)
+                    if self.parser.has_option("system","syn_db"):
+                        self._syn_to_db(syn_locs,sender)
                         
         self.conn.commit()
         if self.parser.has_option("system","syn_db"):
