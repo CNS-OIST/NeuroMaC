@@ -30,12 +30,12 @@ if __name__ == "__main__" :
             comment='Movie support!')
     writer = FFMpegWriter(fps=5, metadata=metadata)
         
-    fig = plt.figure(1,figsize=(6,10)) # the main figure woth skeleton plot
+    fig = plt.figure(1) # the main figure woth skeleton plot
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    xmin,ymin,zmin = 0.0, 0.0, 500.0 
+    xmin,ymin,zmin = 0.0, 0.0, 0.0 
     dim_xyz = eval(parser.get("substrate","dim_xyz"))
     xmax = dim_xyz[0]
     ymax = dim_xyz[1]
