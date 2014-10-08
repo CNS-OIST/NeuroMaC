@@ -30,11 +30,7 @@ if __name__ == "__main__" :
             comment='Movie support!')
     writer = FFMpegWriter(fps=5, metadata=metadata)
         
-<<<<<<< HEAD
-    fig = plt.figure(1)#,figsize=(6,10)) # the main figure woth skeleton plot
-=======
     fig = plt.figure(1) # the main figure woth skeleton plot
->>>>>>> migrate_front
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
