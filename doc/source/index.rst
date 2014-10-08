@@ -41,6 +41,7 @@ Contents
    docu
    examples
    api
+   problems
    
 Reference
 =========

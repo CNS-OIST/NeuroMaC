@@ -13,6 +13,8 @@ import cPickle as pickle
 
 from front import Front
 
+from multiprocessing import Process
+
 import inspect
 def _me(bool) :
     if(bool) :
@@ -429,7 +431,7 @@ def start_proxy(cfg_file) :
         print e
         print_with_rank("PROXY encountered an error. PROXY down")
     finally:
-        print_with_rank("PROXY finally  down")
+        print_with_rank("PROXY finally down")
         frontend.close()
         backend.close()
         context.term()
@@ -440,7 +442,6 @@ if __name__=="__main__" :
     the admin doing the house hold tasks and thethe Subvolumes \
      holding the developing Fronts
     """
-    from multiprocessing import Process
     no = int(sys.argv[1])
     cfg_file = sys.argv[2]
     
@@ -456,12 +457,12 @@ if __name__=="__main__" :
         svs[-1].start()
     print "Admin going to start with cfg_file: ", cfg_file
     admin = Admin_Agent(no+1,cfg_file)
-    print "Admin is klaar"
+    print "Admin is ready"
     time.sleep(0.5)
-    print "proxy wordt uitgezet"
+    print "Switching off proxy"
     proxy.terminate()
-    print "proxy is uit"
+    print "Proxy switched off"
     for sv in svs :
         sv.terminate()
-    print "Admin komt hier"
+    print "Admin done. Terminated."
     sys.exit(0) # don't understand why it doesn't clean properly...
