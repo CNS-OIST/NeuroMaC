@@ -464,10 +464,13 @@ class Subvolume_Agent(object) :
             else:
                 # check against itself!!! HOW-O-HOW
                 # for now synapses between itself are out of question
+                """
+                Check validity of a new front against other fronts of
+                the same structure (front.entity_name).
+                """
 
                 # OK to have: pathL < soma.diam
                 for o_front in self.dynamic_constellation[entity_name]:
-                    #D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                     D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                     if np.all(o_front.xyz == front.soma_pos):
                         # comparing to the soma
@@ -476,9 +479,12 @@ class Subvolume_Agent(object) :
                             pass
                         else:
                             if D < o_front.radius:
+                                print "self colliding with soma"
                                 return False,[]
                             
-                    elif D < o_front.radius:
+                    # elif D < o_front.radius:
+                    elif D <= 0.0: # not the same location. needed if extendeding with very small segments
+                        print "self refused on radius (D=%f)" % D
                         return False,[]
         return ret, syn_locs        
 
