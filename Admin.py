@@ -39,6 +39,8 @@ class Admin_Agent(object) :
         self.parser = SafeConfigParser()
         self.parser.read(cfg_file)
         np.random.seed(self.parser.getint("system","seed"))
+        if self.parser.has_option("system","recursion_limit"):
+            sys.setrecursionlimit(self.parser.getint("system","recursion_limit"))
         self.substrate={}
         # a few variable should be global
         self.total_processors = total_processors # until I find a better way

@@ -51,6 +51,31 @@ class Subvolume_Agent(object) :
         
         self.parser = SafeConfigParser()
         self.parser.read(cfg_file)
+        if self.parser.has_option("system","recursion_limit"):
+            sys.setrecursionlimit(self.parser.getint("system","recursion_limit"))
+
+        """ check the minimum distance between fronts of each entity_type.
+            Used to test the validity of front. If not set, the default
+            of current_diameter / 2 is used. Otherwise as specified.
+            Setting this value in the cfg-file comes handy when using
+            a very small increment to achieve "detailed" avoidance/attraction.
+
+            Check once when starting the Subvolume agent.
+        """
+        allowed_self_dist = {}
+        for section in self.parser.sections():
+            if section.startswith("cell_type_"):
+                if self.parser.has_option(section, "minimum_self_distance"):
+                    allowed_self_dist[section] = self.parser.getfloat(\
+                                                      section,\
+                                                      "minimum_self_distance")
+                    print "allowed_s_d[%s]=%f" % (section,allowed_self_dist[section])
+        self.allowed_self_dist = allowed_self_dist
+                
+        if self.parser.has_option("system","recursion_limit"):
+            sys.setrecursionlimit(self.parser.getint("system","recursion_limit"))                    
+
+        # ready. set. go!
         self._initialize_communication_links()
         self.main_loop()
 
@@ -254,7 +279,8 @@ class Subvolume_Agent(object) :
 
     def _perform_update(self,debug_mem=False) :
         # real deal
-        merged_constellation = copy.deepcopy(self.static_constellation)
+        #merged_constellation = copy.deepcopy(self.static_constellation)
+        merged_constellation = copy.copy(self.static_constellation)
         merged_constellation = self._merge_constellations(merged_constellation,self.dynamic_constellation)
         merged_constellation = self._merge_constellations(merged_constellation,self.neighbor_constellation)
         merged_constellation = self._merge_constellations(merged_constellation,self.distal_constellation)
@@ -446,6 +472,7 @@ class Subvolume_Agent(object) :
 
                     if check_synapses:
                         if D < (front.radius + o_front.radius) :
+                            print "radii too close"
                             ret = False
                         elif D < (front.radius + o_front.radius + self.parser.getfloat("system","synapse_distance")):
                             #print "synapse!!!"
@@ -459,6 +486,7 @@ class Subvolume_Agent(object) :
                             syn_locs.append(pre_post)
                     else:
                         if D < (front.radius + o_front.radius) :
+                            print "radii too close [w/o syns]: D=%f (fr=%f, or=%f)" % (D,front.radius,o_front.radius)
                             return False,[]
 
             else:
@@ -468,9 +496,13 @@ class Subvolume_Agent(object) :
                 Check validity of a new front against other fronts of
                 the same structure (front.entity_name).
                 """
-
                 # OK to have: pathL < soma.diam
                 for o_front in self.dynamic_constellation[entity_name]:
+                    min_distance =  o_front.radius / 2.0
+                    EN = entity_name.split("__")[0] 
+                    if EN in self.allowed_self_dist:
+                        min_distance = self.allowed_self_dist[EN]                
+                    
                     D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                     if np.all(o_front.xyz == front.soma_pos):
                         # comparing to the soma
@@ -483,7 +515,7 @@ class Subvolume_Agent(object) :
                                 return False,[]
                             
                     # elif D < o_front.radius:
-                    elif D <= 0.0: # not the same location. needed if extendeding with very small segments
+                    elif D <= min_distance: 
                         print "self refused on radius (D=%f)" % D
                         return False,[]
         return ret, syn_locs        

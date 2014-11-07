@@ -48,6 +48,10 @@ communicate between the different components.
 :code:`no_cycles` defines how many times each front has to be extended. \
 :code:`out_db` specifies the location of the raw SQL output database. \
 
+Additional optional parameter: :code:`recursion_limit`. If not set, the 
+Python default (that depends on your system) is used. If set, the default
+is overwritten by the provided integer number.
+
 
 :code:`[substrate]`
 ~~~~~~~~~~~~~~~~~~~
@@ -107,7 +111,13 @@ the initial position of the structure. The structure of the value is: \
 [[x_min,y_min,z_min], [x_max,y_max,z_max]], which create a rectangular \
 shape;  NeuroMaC uniformly samples a position from this rectangle. In \
 case of only one seed, the location can be defined as any point in space \
-(by setting x_min=xmax, y_min=y_max and z_min=z_max) 
+(by setting x_min=xmax, y_min=y_max and z_min=z_max).
+
+Optional parameter: :code:`minimum_self_distance` (float) to configure
+the minimum distance between two fronts of the same structure. The default,
+which is used when not set, is the radius of the "other" front / 2. In 
+case you want to have very small increment in the neurite extension, 
+you might want to set this value to the minimal increment size (in micron). 
 
 .. warning:: The algorithm name must be in the :code:`$PYTHONPATH` and \
    must have the name :code:`<name>.py`. That is, if in the configuration \

@@ -131,7 +131,8 @@ def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_orde
     new_front : :py:class:`front.Front`
        
     """
-    new_front = copy.deepcopy(front)
+    # new_front = copy.deepcopy(front)
+    new_front = copy.copy(front)
     new_front.parent = front
     new_front.xyz = new_pos
     if not radius_factor == None:
@@ -241,12 +242,12 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
         decay = compute_exp_decay_factor(strength,\
                                          decay_factor,\
                                          L)
-        print "self_rep, L=%.2f, decay=%.2f " % (L,decay)
+        # print "self_rep, L=%.2f, decay=%.2f " % (L,decay)
         nearest_vec = (nearest_vec/ L * decay)
         L = np.sqrt(sum((nearest_vec)**2))
-        print "self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff)
+        # print "self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff)
         if L < cutoff:
-            print "return [0,0,0]"
+            #print "return [0,0,0]"
             return np.array([0,0,0])
         else:
             return nearest_vec        
