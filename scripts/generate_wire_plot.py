@@ -15,14 +15,9 @@ timer = time.time
 a_start = 90.0
 e_start = 10.0
 
-def plot_as_wires(cfg_file,db_name) :    
+def plot_as_wires(cfg_file,db_name,syn_db) :    
     # cfg_file = sys.argv[1]
     # db_name = sys.argv[2]
-    syn_db = ""
-    try:
-        syn_db = sys.argv[3]
-    except Exception:
-        pass
     parser = SafeConfigParser()
     parser.read(cfg_file)
     colors= ['r','g','b','c','m','k']
@@ -123,5 +118,10 @@ def plot_as_wires(cfg_file,db_name) :
 if __name__=="__main__" :
     cfg_file = sys.argv[1]
     db_name = sys.argv[2]
-    tt = plot_as_wires(cfg_file,db_name)
+    syn_db = ""
+    try:
+        syn_db = sys.argv[3]
+    except Exception:
+        pass
+    tt = plot_as_wires(cfg_file,db_name,syn_db)
     print 'total time for wires: ', tt
