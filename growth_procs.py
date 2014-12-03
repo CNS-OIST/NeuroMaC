@@ -46,6 +46,34 @@ def get_entity(entity_name,constellation) :
             entities = entities + constellation[key]
     return entities
 
+def get_other_entity(front,constellation) :
+    """
+    Get a list of all point associated to all other entities except for
+    entities of the same structure
+
+    .. warning:: Does not yield desired results when searching for "own" \
+       entities, that is, all other components of the same entity.    
+
+    Parameters
+    ----------
+    front : :class:`front.Front`
+       To specify "self" in contrast to "others"
+    constellation : dict of list of np.array
+       A "point-only" constellation. That is, entries in this dict are \
+       lists of 3D np.array vectors
+
+    Returns
+    -------
+    entities : list
+       List contains 3D positions of all structure except for "self".
+    """
+    entity_name = front.entity_name
+    entities = []
+    for key in constellation.keys() :
+        if not key.startswith(entity_name):
+            entities = entities + constellation[key]
+    return entities
+
 def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit=10):
     """
     Search for all entity components of a structure. For instance, if \
@@ -69,6 +97,7 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
        List contains 3D positions
     """
     entity_name = front.entity_name
+    print "front.entity_name: ", entity_name
     entities = []
     for key in constellation.keys() :
         if key.startswith(entity_name):
@@ -83,27 +112,29 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
     construct a list of positions, that will be removed from the entities list
     """
     len_before = len(entities)
-    to_be_removed = []
-    to_be_removed.append(front.xyz) # no cue from yourself
+    # to_be_removed = []
+    # to_be_removed.append(front.xyz) # no cue from yourself
+    #print "self as tuple:", tuple(front.xyz)
 
-    print "self as tuple:", tuple(front.xyz)
+    try:
+        entities.remove(tuple(front.xyz))
+        path_L = 0
+        c_front = front
+        while path_L < ancestry_limit:
+            parent = c_front.parent
+            if parent == None:
+                break
+            path_L = path_L + np.sqrt(np.sum((c_front.xyz-parent.xyz)**2))
+            #to_be_removed.append(parent.xyz)
+            c_front= parent
+            entities.remove(tuple(parent.xyz))
+    except Exception as error:
+        print "growth_procs.get_eigen_entity: caught unknown removal: ", str(error)
     
-    entities.remove(tuple(front.xyz))
-    path_L = 0
-    c_front = front
-    while path_L < ancestry_limit:
-        parent = c_front.parent
-        if parent == None:
-            break
-        path_L = path_L + np.sqrt(np.sum((c_front.xyz-parent.xyz)**2))
-        to_be_removed.append(parent.xyz)
-        c_front= parent
-        entities.remove(tuple(parent.xyz))
     len_after = len(entities)
-    print "len(entities), before=%i, after=%i" % (len_before,len_after)
+    #print "len(entities), before=%i, after=%i" % (len_before,len_after)
     entities = map(np.array,entities)
     return entities
-    
 
 def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_order=False) :
     """
@@ -131,7 +162,7 @@ def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_orde
     new_front : :py:class:`front.Front`
        
     """
-    # new_front = copy.deepcopy(front)
+    #new_front = copy.deepcopy(front)
     new_front = copy.copy(front)
     new_front.parent = front
     new_front.xyz = new_pos
@@ -250,7 +281,24 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
             #print "return [0,0,0]"
             return np.array([0,0,0])
         else:
-            return nearest_vec        
+            return nearest_vec
+    elif what=="all":
+        output=[]
+        nearest_vecs = direction_to(front,list_of_others,what=what)
+        for nearest_vec in nearest_vecs:
+            L = np.sqrt(sum((nearest_vec)**2))
+            decay = compute_exp_decay_factor(strength,\
+                                             decay_factor,\
+                                             L)
+            # print "self_rep, L=%.2f, decay=%.2f " % (L,decay)
+            nearest_vec = (nearest_vec/ L * decay)
+            L = np.sqrt(sum((nearest_vec)**2))
+            # print "self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff)
+            if L < cutoff:
+                pass # only gradients exceeding thr cutoff will be returned
+            else:
+                output.append(nearest_vec)
+        return output
         
     
 # to be replaced
