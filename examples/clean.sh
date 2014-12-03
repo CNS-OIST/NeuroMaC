@@ -39,3 +39,8 @@ rm gradient/*.{mp4,db} 2>/dev/null
 rm gradient/*_wire.pdf 2>/dev/null
 rm gradient/*_radii* 2>/dev/null
 rm gradient/*swc 2>/dev/null
+
+rm detailed_avoidance/*.{mp4,db} 2>/dev/null
+rm detailed_avoidance/*_wire.pdf 2>/dev/null
+rm detailed_avoidance/*_radii* 2>/dev/null
+rm detailed_avoidance/*swc 2>/dev/null
