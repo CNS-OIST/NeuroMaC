@@ -10,8 +10,8 @@ PYTHON="python2.7"
 # For demonstration purposes, putative synapse locations are recorded 
 # between neurites.
 # Movie commented by default as it takes a long time to generate
-time PYTHONPATH=to_pia/:$PYTHONPATH python ../Admin.py 8 to_pia/many.cfg
-python ../scripts/generate_SWC_data.py update_environment/update_env.cfg update_environment/update.db
-# python ../scripts/helper_generate_movie.py to_pia/many.cfg to_pia/many.db
+time PYTHONPATH=to_pia/:$PYTHONPATH $PYTHON ../Admin.py 8 to_pia/many.cfg
+$PYTHON ../scripts/generate_SWC_data.py update_environment/update_env.cfg update_environment/update.db
+# $PYTHON ../scripts/helper_generate_movie.py to_pia/many.cfg to_pia/many.db
 $PYTHON ../scripts/generate_wire_plot.py to_pia/many.cfg to_pia/many.db to_pia/many_syn_locs.db
 $PYTHON ../scripts/generate_radii_plot.py to_pia/many.cfg to_pia/many.db
