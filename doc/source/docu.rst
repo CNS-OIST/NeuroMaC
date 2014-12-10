@@ -171,7 +171,7 @@ The fixed part of the growth-rule is the definition so that NeuroMaC
 knows which function to execute. As such Python growth-rule *must* 
 contain the following: ::
 
-   def extend_front(front,seed,constellation) :
+   def extend_front(front,seed,constellation,interstitial) :
        # Do things, this front either branches, terminates or 
        # elongates. In these cases either two, none or one new front 
        # has to be returned

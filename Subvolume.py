@@ -36,6 +36,7 @@ class Subvolume_Agent(object) :
     def __init__(self,num,cfg_file="test_config.cfg") :
         self.num=num
         self.active_fronts = []
+        self.interstitial_fronts = [] # contains pairs (cycle,front): cyclle is used for future reference
         print_with_rank(num, "Online!")
 
         # static: boundaries
@@ -293,13 +294,42 @@ class Subvolume_Agent(object) :
         np.random.shuffle(self.active_fronts)
         changes = []
         all_synapse_locs = []
+
+        """2014-12-08: Allow insterstitial branching.
+        Check for potential interstitial parents and re-active those fronts.
+        Once re-actived, remove from the pool self.interstitial_fronts
+        RE-ACTIVE parent giving rise to interstitial branches
+        """
+        print "SV: i_fronts: ", str(self.interstitial_fronts)
+        re_activated_parents = []
+        to_remove = []
+        for (init_cycle,offset,prob,i_parent) in self.interstitial_fronts:
+            if self.update_cycle > init_cycle+offset :
+                # interstitial parent can be re-activated
+                if np.random.random() < prob:
+                    # yes, re-active parent + remove from list
+                    self.active_fronts.append(i_parent)
+                    re_activated_parents.append(i_parent)
+                    print "!!!!Subvolume [c: %i]: re-activating front %s" % (self.update_cycle,str(i_parent))
+                    # How to ensure this parent will only have 1 offspring?
+                    to_remove.append((init_cycle,offset,prob,i_parent))
+        """ end of RE-ACTIVATION"""
+
+        for dp in to_remove:
+            self.interstitial_fronts.remove(dp)
+        
         for i,front in zip(range(len(self.active_fronts)),self.active_fronts) :
             print_with_rank(self.num,"i= "+ str(i)+ ": "+str(front))
 
             c_seed = 0#np.random.randint(0,1000) #+self.num*(self.update_cycle + i)
-            
             front.update_cycle = self.update_cycle
-            ret = front.extend_front(c_seed,pos_only_constellation,self.virtual_constellation)
+
+            # is it an interstitial parent?
+            inter_parent = False
+            if front in re_activated_parents:
+                inter_parent = True
+            
+            ret = front.extend_front(c_seed,pos_only_constellation,self.virtual_constellation,inter_parent)
             if isinstance(ret,tuple) :
                 # front is trying to update the environment
                 # store the update information, likely in my_constellation?
@@ -332,12 +362,19 @@ class Subvolume_Agent(object) :
                 print "ret: ", ret
                 print "type: ",type(ret)
                 print "extend_front must return either list \
-                (for continuation, branch or termination or tuple (list and dict)"
+                   (for continuation, branch or termination or tuple (list and dict)"
                 sys.exit(0)
             if ret == None :
                 # that's the end of this front
                 pass
             else :
+                # check: interstitial parent can only have one offspring (as one already exists)
+                if front in re_activated_parents:
+                    if len(ret) > 1:
+                        print "Subvolume:perform_update: trying to have interstitial branch with multiple offspring"
+                        sys.exit(0)                        
+                    re_activated_parents.remove(front)
+                
                 for f in ret :
                     if self._within_this_volume(f.xyz) :
                         """TODO: PERFORM CHECK: can this front be added at this location
@@ -347,9 +384,22 @@ class Subvolume_Agent(object) :
                         valid,syn_locs = self._valid_and_wiggle(f)
                         
                         if valid:
+                            # potential interstitial branch?
+                            if f.interstitial:
+                                # if sibling exists, this branch cannot become a potential intersitial branch-parent
+                                if len(ret)==1:
+                                    self.interstitial_fronts.append((\
+                                         self.update_cycle,\
+                                         f.interstitial_t_offset,\
+                                         f.interstitial_prob,\
+                                         f))
+                                    f.interstitial = False
+                                    print "Subvolume: RECEIVED AND MARKED INTERSTITIAL"
+                                    print "Subvolume: " + str(self.interstitial_fronts)
+                                         
+                                    
                             new_fronts.append(f)
-                            all_synapse_locs.extend(syn_locs)
-                            # self.my_constellation[f.entity_name].append(f.xyz)
+                            all_synapse_locs.extend(syn_locs)                                    
 
                             self.dynamic_constellation[f.entity_name].add(f)
                             pos_only_constellation[f.entity_name].append(f.xyz)

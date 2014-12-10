@@ -1,4 +1,4 @@
-import time,copy
+import time,copy,sys
 import numpy as np
 from front import Front
 
@@ -136,7 +136,9 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
     entities = map(np.array,entities)
     return entities
 
-def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_order=False) :
+def prepare_next_front(front,new_pos,radius_factor=None,\
+                       set_radius=None,add_order=False,\
+                       interstitial_prob=0.0,interstitial_t_offset=sys.maxint) :
     """
     Wrapper function to prepare a new front based on a new positions. \
     This function takes care of the internal variables (:code:`path_length`) \

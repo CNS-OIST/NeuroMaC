@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 
 import time # only for testing
@@ -46,6 +47,12 @@ class Front(object) :
         #: Radius of the front
         #: Consecutive fronts form a frustrum or cylinder
         self.radius = radius
+        #: Indicates whether this position *can* give rise to an interstitial branch later on in the simulated growth
+        self.interstitial = False
+        #: Indicates when this front can give rise to an interstitial branch.
+        self.interstitial_t_offset = sys.maxint
+        #: Indicates the probability this branch becomes active after current_cycle+t_offset
+        self.interstitial_prob = 0.0
         #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.path_length= path_length
         #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
@@ -96,7 +103,7 @@ class Front(object) :
     def __hash__(self):
         return hash(self.__key())
     
-    def extend_front(self,seed,constellation,virtual_substrate={}) :
+    def extend_front(self,seed,constellation,virtual_substrate={},interstitial=False) :
         """
         Main function. Outsources the execution to the actual growth-rules \
         specified in the configuration file (:code:`cell_type_x` > \
@@ -112,6 +119,7 @@ class Front(object) :
         seed : int
         constellation : dict of list of np.array
         virtual_substrate : dict of list
+        interstitial : boolean
 
         Returns
         -------
@@ -137,6 +145,6 @@ class Front(object) :
 
         # outsource the real call to extend a front
         globals()[self.algo_name] = __import__(self.algo_name)
-        ret = globals()[self.algo_name].extend_front(self,seed,constellation)
+        ret = globals()[self.algo_name].extend_front(self,seed,constellation,interstitial)
         return ret
 
