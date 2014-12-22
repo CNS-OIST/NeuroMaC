@@ -11,7 +11,7 @@ from growth_procs import unit_sample_on_sphere,\
 
 L_NORM=10
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     new_pos =front.xyz + np.array([-1*L_NORM,0,0])
     new_front = prepare_next_front(front,new_pos,set_radius=5.0)
     return [new_front]
