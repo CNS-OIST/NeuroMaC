@@ -300,7 +300,7 @@ class Subvolume_Agent(object) :
         Once re-actived, remove from the pool self.interstitial_fronts
         RE-ACTIVE parent giving rise to interstitial branches
         """
-        print "SV: i_fronts: ", str(self.interstitial_fronts)
+        #print "SV: i_fronts: ", str(self.interstitial_fronts)
         re_activated_parents = []
         to_remove = []
         for (init_cycle,offset,prob,i_parent) in self.interstitial_fronts:
@@ -313,10 +313,9 @@ class Subvolume_Agent(object) :
                     print "!!!!Subvolume [c: %i]: re-activating front %s" % (self.update_cycle,str(i_parent))
                     # How to ensure this parent will only have 1 offspring?
                     to_remove.append((init_cycle,offset,prob,i_parent))
-        """ end of RE-ACTIVATION"""
-
         for dp in to_remove:
-            self.interstitial_fronts.remove(dp)
+            self.interstitial_fronts.remove(dp)                    
+        """ end of RE-ACTIVATION"""
         
         for i,front in zip(range(len(self.active_fronts)),self.active_fronts) :
             print_with_rank(self.num,"i= "+ str(i)+ ": "+str(front))
@@ -359,7 +358,6 @@ class Subvolume_Agent(object) :
             elif isinstance(ret,list) or ret == None:
                 pass # front is only extending
             else :
-                print "ret: ", ret
                 print "type: ",type(ret)
                 print "extend_front must return either list \
                    (for continuation, branch or termination or tuple (list and dict)"
@@ -371,7 +369,9 @@ class Subvolume_Agent(object) :
                 # check: interstitial parent can only have one offspring (as one already exists)
                 if front in re_activated_parents:
                     if len(ret) > 1:
+                        print "ret: ", ret
                         print "Subvolume:perform_update: trying to have interstitial branch with multiple offspring"
+                        print "parent (front): {0}".format(front.__dict__)
                         sys.exit(0)                        
                     re_activated_parents.remove(front)
                 
@@ -395,7 +395,7 @@ class Subvolume_Agent(object) :
                                          f))
                                     f.interstitial = False
                                     print "Subvolume: RECEIVED AND MARKED INTERSTITIAL"
-                                    print "Subvolume: " + str(self.interstitial_fronts)
+                                    #print "Subvolume: " + str(self.interstitial_fronts)
                                          
                                     
                             new_fronts.append(f)
@@ -603,7 +603,6 @@ class Subvolume_Agent(object) :
         TODO 2014-08-05: check if front is valid, if not: wiggle until valid or refute
         """
         new_front = message[1]
-        self.active_fronts.append(new_front)
 
         """ Migrate front (2014-10-06)
         """
@@ -615,6 +614,7 @@ class Subvolume_Agent(object) :
             else:
                 self.dynamic_constellation[new_front.entity_name] = set()
                 self.dynamic_constellation[new_front.entity_name].add(new_front)
+            self.active_fronts.append(new_front)
 
         # in case of new synapses, notify the Admin agent
         msg = ("Extra_synapses","%06d"%self.num,syn_locs)
