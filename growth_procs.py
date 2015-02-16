@@ -70,8 +70,9 @@ def get_other_entity(front,constellation) :
     entity_name = front.entity_name
     entities = []
     for key in constellation.keys() :
-        if not key.startswith(entity_name):
-            entities = entities + constellation[key]
+        if key.startswith("cell_"):
+            if not key.startswith(entity_name):
+                entities = entities + constellation[key]
     return entities
 
 def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit=10):
@@ -197,7 +198,7 @@ def normalize_length(vec,norm_L) :
         return [0,0,0]
     return vec / np.sqrt(np.sum((vec)**2)) * norm_L
 
-def direction_to(front,list_of_others,what="average") :
+def direction_to(front,list_of_others,what="average",max_n=None) :
     """
     Compute the direction vector towards *some other entities*.
 
@@ -216,6 +217,11 @@ def direction_to(front,list_of_others,what="average") :
        - 'average': default. TODO. Currently returns a list of direction \
           vectors
        -  'all':  Return a list of all direction vectors
+    max_n : integer
+       Maximum number of returned (in case of `what='all'`) or incorporated
+       (in case of `what='average'`) entities. Ordered according to the
+       "strongest" vector (that is, in order of decreasing distance).
+       Default is `None` and returnes/incorporates all.
     """
     if len(list_of_others) == 0 :
         # shouldn't this be array([0,0,0])??? No items, null vector
@@ -223,19 +229,28 @@ def direction_to(front,list_of_others,what="average") :
         return None # handle the error somewhere else
     pos = front.xyz
     vecs = []
+    Ls=[]
     smallest_vec = np.array([100000000,100000000,100000000])
     for loc in list_of_others :
         vec = loc-pos#pos-loc
         vecs.append(vec)
+        L=np.sqrt(np.sum((loc-pos)**2))
+        Ls.append(L)
         # THIS SHOULD BE MEMORIZED / TABULATED ++++++++++++++++++++ <-----
-        if np.sqrt(np.sum((loc-pos)**2)) < np.sqrt(np.sum((smallest_vec)**2)) :
+        if L < np.sqrt(np.sum((smallest_vec)**2)) :
             smallest_vec = vec
     if what == "nearest" :
         return smallest_vec
-    else :
-        return vecs
+    elif what=="average" :
+        pass
+    else:
+        ind = np.argsort(np.array(Ls))[::-1]
+        if max_n == None:
+            return list(np.array(vecs)[ind])
+        else:
+            return list(np.array(vecs)[ind])[:max_n]
 
-def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff=0.01) :
+def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff=0.01,max_n=None) :
     """
     Determines the weighted vector towards *some other entities*. \
     The length of the direction vectors is scaled according to the \
@@ -266,8 +281,12 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
     cutoff : float
        Minimal direction vector length. Vectors that are smaller after \
        are discarded.
+    max_n : integer
+       Maximum number of returned (in case of `what='all'`) or incorporated
+       (in case of `what='average'`) entities. Ordered according to the
+       "strongest" vector (that is, in order of decreasing distance).
+       Default is `None` and returnes/incorporates all.       
     """
-    #all_vecs = direction_to(front,list_of_others,what=what)
     nearest_vec = np.array([100000000,100000000,100000000])
     if what == "nearest" :
         nearest_vec = direction_to(front,list_of_others,what=what)
@@ -286,6 +305,7 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
             return nearest_vec
     elif what=="all":
         output=[]
+        Ls=[]
         nearest_vecs = direction_to(front,list_of_others,what=what)
         for nearest_vec in nearest_vecs:
             L = np.sqrt(sum((nearest_vec)**2))
@@ -299,8 +319,11 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
             if L < cutoff:
                 pass # only gradients exceeding thr cutoff will be returned
             else:
-                output.append(nearest_vec)
-        return output
+                if not np.isnan(nearest_vec).any():
+                    output.append(nearest_vec)
+                    Ls.append(L)
+        ind = np.argsort(np.array(Ls))[::-1]
+        return list(np.array(output)[ind])[:max_n]
         
     
 # to be replaced
