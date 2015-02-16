@@ -7,7 +7,7 @@ from growth_procs import direction_to,\
 
 L_NORM=3
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     """
     Growth is directed by an attraction to the "pia"; a point-cloud \
     located at the top of the volume. (See straight.cfg)
