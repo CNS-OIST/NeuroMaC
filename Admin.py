@@ -322,10 +322,6 @@ class Admin_Agent(object) :
                     # store internally
                     self.summarized_constellations[sender] = t_constellation
 
-                    # ##### TEST
-                    # print_with_rank("Received summ ("+str(sender)+"): " + str(t_constellation.keys())  )
-                    # time.sleep(1)
-                    # #### END OF TEST
                 elif message[0] == "Migrate_Front" :
                     self._process_migrate_front(message)
                     time.sleep(0.)
