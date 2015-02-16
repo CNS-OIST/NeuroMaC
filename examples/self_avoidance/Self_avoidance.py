@@ -12,7 +12,7 @@ from growth_procs import unit_sample_on_sphere,\
 
 L_NORM=5.0
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     """ Grow away from self-contained stretches of neurites.
     """
     eigen_entities = get_eigen_entity(front,constellation)

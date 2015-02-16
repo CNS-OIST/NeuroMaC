@@ -4,7 +4,7 @@ from growth_procs import unit_sample_on_sphere,\
 
 L_NORM = 3.0
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     if front.order == 0:
         new_fronts = []
         for i in range(5):

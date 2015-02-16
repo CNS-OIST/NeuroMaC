@@ -8,7 +8,7 @@ from growth_procs import unit_sample_on_sphere,\
 
 L_NORM=2.0
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     # attract by a different neuron, get information
     other_entities = get_entity("substance_x",constellation)
 

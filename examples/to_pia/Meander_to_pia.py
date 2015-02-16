@@ -9,7 +9,7 @@ from growth_procs import unit_sample_on_sphere,\
      get_entity,\
      prepare_next_front
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     if front.order == 0 : # soma
         new_fronts = []
         for i in range(3):

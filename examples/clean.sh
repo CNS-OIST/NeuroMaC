@@ -44,3 +44,8 @@ rm detailed_avoidance/*.{mp4,db} 2>/dev/null
 rm detailed_avoidance/*_wire.pdf 2>/dev/null
 rm detailed_avoidance/*_radii* 2>/dev/null
 rm detailed_avoidance/*swc 2>/dev/null
+
+rm interstitial/*.{mp4,db} 2>/dev/null
+rm interstitial/*_wire.pdf 2>/dev/null
+rm interstitial/*_radii* 2>/dev/null
+rm interstitial/*swc 2>/dev/null

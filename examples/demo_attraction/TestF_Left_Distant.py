@@ -7,7 +7,7 @@ from growth_procs import direction_to,\
 
 L_NORM=3.0
 
-def extend_front(front,seed,constellation) :
+def extend_front(front,seed,constellation,interstitial) :
     # attract by a different neuron, get information
     other_entities = get_entity("cell_type_2",constellation)
     if not len(other_entities) == 0:
