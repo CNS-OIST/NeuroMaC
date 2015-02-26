@@ -12,6 +12,7 @@ import numpy as np
 import cPickle as pickle
 
 from front import Front
+import btmorph
 
 from multiprocessing import Process
 
@@ -46,6 +47,7 @@ class Admin_Agent(object) :
         self.total_processors = total_processors # until I find a better way
         self.processor_ids = range(1,self.total_processors) # start from 1: skip the Admin
         self.summarized_constellations = {} # store summarized constellations based on their self.num / proc id
+        self.non_swc_trees = {} # construct trees from extending Fronts
         # set up communication links for the Admin
         self._initialize_communication_links()
         self._setup_DBs()
@@ -58,6 +60,7 @@ class Admin_Agent(object) :
         if ret < 0 :
             self._destruction()
             return
+        
         # and continue with the real deal if we haven't been kicked out yet
         self.main_loop()
         
@@ -279,14 +282,39 @@ class Admin_Agent(object) :
 
         # print_with_rank("ship_entity_to_proc: " + str(ship_entity_to_proc))
 
+        total_no_entities = 0
         for proc in ship_entity_to_proc.keys() :
             entries = ship_entity_to_proc[proc]
+            total_no_entities = total_no_entities + len(ship_entity_to_proc[proc])
             message=("Initialize_GEs",entries)
             # comm.send(message,dest=proc,tag=2)
             self.ppub.send_multipart(["%06d"%proc,pickle.dumps(message)])
             print_with_rank("to %i: %s" % (proc,str(message)))
-        return 1 # positive: all is well
-        
+
+        # 2015-02-25
+        # maybe I can wait here for the retured somata...
+        received_somata = 0
+        while received_somata < total_no_entities:
+            print_with_rank("waiting: received={0} from total {1}".format(received_somata,total_no_entities))
+            [address,message] = self.psub.recv_multipart()
+            message = pickle.loads(message)
+            sender = message[1]
+            if message[0] == "Soma_fronts":
+                soma_fronts = message[2]
+                received_somata = received_somata + len(soma_fronts)
+                print_with_rank("waiting [end]: received={0} from total {1}".format(received_somata,total_no_entities))
+
+                for front in soma_fronts:
+                    # start a tree with the somata
+                    p3d = btmorph.P3D2(front.xyz,front.radius,1) # 1: SWC soma type
+                    t_node = btmorph.SNode2(hash(front))
+                    t_node.content={'p3d':p3d}
+                    self.non_swc_trees[front.entity_name]=btmorph.STree2()
+                    self.non_swc_trees[front.entity_name].root = t_node
+            else:
+                print_with_rank("this should not happen, received {0} from {1}".format(sender,message[0]))
+            
+        return 1 # positive: all is well        
     
     def main_loop(self) :
         """ Perform some update cycles. When the admin publishes an \
@@ -314,8 +342,15 @@ class Admin_Agent(object) :
                     changes = message[2]
                     syn_locs = message[3]
                     t_constellation = message[4]
+                    
                     # write changes
                     self._temp_to_db(changes,sender)
+
+                    """instead of writing changes, construct tree structure
+                    on the fly.
+                    Initial tree (root) is created when GES are distributed"""
+                    self._expand_tree(changes,sender)
+                    
                     # store putative synapse locations
                     if self.parser.has_option("system","syn_db"):
                         self._syn_to_db(syn_locs,sender)
@@ -332,10 +367,50 @@ class Admin_Agent(object) :
                     # store putative synapse locations
                     if self.parser.has_option("system","syn_db"):
                         self._syn_to_db(syn_locs,sender)
-                        
+
+        # write the DB with the morphologies
         self.conn.commit()
+
+        # write DB with synapses (if specified in the config file)
         if self.parser.has_option("system","syn_db"):
             self.syn_conn.commit()
+
+        # convert and write non_swc_trees
+        self._convert_to_SWC_and_write()
+
+    def _convert_to_SWC_and_write(self):
+        """ copy the trees and change the indices to increases indices,
+        not hash codes
+        """
+        for (tree,key) in zip(self.non_swc_trees.values(),self.non_swc_trees.keys()):
+            root = tree.get_root()
+            nodes = tree.get_nodes()
+
+            print_with_rank("tree {0} has {1} nodes".format(key,len(nodes)))
+
+            root.index = 1
+            # add two segment to comply with NeuroMorpho.org three-point soma
+            r_p3d =root.content['p3d']
+            r_xyz = r_p3d.xyz
+            pos1 = btmorph.P3D2(np.array([r_xyz[0],r_xyz[1]-r_p3d.radius,r_xyz[2]]),radius=r_p3d.radius,type=1)#1 = swc type
+            pos2 = btmorph.P3D2(np.array([r_xyz[0],r_xyz[1]-r_p3d.radius,r_xyz[2]]),radius=r_p3d.radius,type=1)#1 = swc type
+            sub1 = btmorph.SNode2(2)
+            sub1.content={'p3d':pos1}
+            sub2 = btmorph.SNode2(3)
+            sub2.content={'p3d':pos2}
+            tree.add_node_with_parent(sub1,root)
+            tree.add_node_with_parent(sub2,root)
+
+            # re-number all other nodes with increasing indices
+            index = 4
+            for node in nodes:
+                if not node==root:
+                    node.index = index
+                    index = index +1
+
+            # write the SWC compliant tree to a file
+            file_n = "tree_{0}.swc".format(key)
+            tree.write_SWC_tree_to_file(file_n)
 
     def _temp_to_db(self,changes,sender):#front,c_fronts) :
         for front,c_fronts in changes :
@@ -351,6 +426,28 @@ class Admin_Agent(object) :
                 self.conn.execute("INSERT into swc_data VALUES (?,?,?,?,?,?,?,?,?,?,?)",values )
         #self.conn.commit()                        
 
+    def _expand_tree(self,changes,sender):
+        """
+        Dynamically built a non-swc complianted tree representing the neuronal morphology.
+        Initial trees with somata are created when the GEs are distributed
+        and confirmed by the SVs
+        """
+        for front,c_fronts in changes :
+            parent_id = hash(front)
+            parent_node = self.non_swc_trees[front.entity_name][parent_id]
+            for c_front in c_fronts :
+                cpos = c_front.xyz
+                name = c_front.entity_name
+                radius = c_front.radius
+                swc_type = c_front.swc_type
+                daughter_id = hash(c_front)
+                print_with_rank("parent hash={0}, daughter hash={1}".format(parent_id,daughter_id))
+
+                p3d = btmorph.P3D2(cpos,radius,swc_type) 
+                t_node = btmorph.SNode2(daughter_id)
+                t_node.content={'p3d':p3d}
+                self.non_swc_trees[front.entity_name].add_node_with_parent(t_node,parent_node)                
+                        
     def _syn_to_db(self,syn_locs,sender):
         for syn_loc in syn_locs:
             # pre_front = syn_loc[0]

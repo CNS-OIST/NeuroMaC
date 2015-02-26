@@ -247,6 +247,7 @@ class Subvolume_Agent(object) :
     def _process_initialize_ges(self,message):
         print_with_rank(self.num,"message: " + str(message))
         entries = message[1]
+        soma_fronts = []
         for details in entries :
             algo_name = details["algorithm"]
             entity_name = details["entity_name"]
@@ -256,13 +257,6 @@ class Subvolume_Agent(object) :
                               0,0) # 0: pathlength, 0: order
             new_front.soma_pos = soma_xyz
 
-            # self.fronts.append(new_front)
-
-            # # 2014-02-19: in principle the "all_contained" can be deleted once
-            # # I include the diameters in all constellations
-            # self.all_contained_entities[entity_name] = []
-            # self.all_contained_entities[entity_name].append(new_front)
-
             # 2014-08-06
             if entity_name in self.dynamic_constellation :
                 print "Help! I am overwriting something"
@@ -270,6 +264,12 @@ class Subvolume_Agent(object) :
             self.dynamic_constellation[entity_name] = set()
             self.dynamic_constellation[entity_name].add(new_front)#append((soma_xyz,radius))
             self.active_fronts.append(new_front)
+
+            # 2015-02-24
+            soma_fronts.append(new_front)
+        # send front to the Admin to update the global tree structures
+        msg = ("Soma_fronts","%06d"%self.num,soma_fronts)
+        self.ppub.send_multipart(["Admin",pickle.dumps(msg)])            
 
     def _get_pos_only_constellation(self,c):
         new_c = {}
@@ -412,11 +412,10 @@ class Subvolume_Agent(object) :
                         message=("Migrate_Front",f,front) # send new front and parent
                         self.ppub.send_multipart(["Admin",pickle.dumps(message)])
                 # self._temp_to_db(front,ret)
+                print_with_rank(self.num,"parent h={0}, d[0]H={1}".format(front.__hash__(),ret[0].__hash__()))
                 changes.append((front,ret))
         self.active_fronts = new_fronts
         
-        #self.socket_push.send(pickle.dumps(("Update_OK",self.my_constellation)))
-
         """should I only send a summary of dynamic and substances?
         distal and neighbors are not interesting to send and static is already known from the start to all others
         so yes,
