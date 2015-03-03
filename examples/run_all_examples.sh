@@ -28,9 +28,9 @@ $PYTHON ../scripts/generate_radii_plot.py demo_attraction/demo_attraction.cfg de
 
 # Straight to pia: one front runs straight to the pia.
 # The pia is a point-cloud, see cfg file and online documentation
-time PYTHONPATH=straight_to_pia/:$PYTHONPATH $PYTHON ../Admin.py 1 straight_to_pia/straight.cfg
+time PYTHONPATH=straight_to_pia/:$PYTHONPATH $PYTHON ../Admin.py 4 straight_to_pia/straight.cfg
 $PYTHON ../scripts/generate_SWC_data.py straight_to_pia/straight.cfg straight_to_pia/straight.db
-# python ../scripts/helper_generate_movie.py straight_to_pia/straight.cfg straight_to_pia/straight.db
+$PYTHON ../scripts/helper_generate_movie.py straight_to_pia/straight.cfg straight_to_pia/straight.db
 $PYTHON ../scripts/generate_wire_plot.py straight_to_pia/straight.cfg straight_to_pia/straight.db
 $PYTHON ../scripts/generate_radii_plot.py straight_to_pia/straight.cfg straight_to_pia/straight.db
 
@@ -100,3 +100,19 @@ $PYTHON ../scripts/generate_SWC_data.py gradient/to_gradient.cfg gradient/gradie
 $PYTHON ../scripts/helper_generate_movie.py gradient/to_gradient.cfg gradient/gradient.db
 $PYTHON ../scripts/generate_wire_plot.py gradient/to_gradient.cfg gradient/gradient.db
 $PYTHON ../scripts/generate_radii_plot.py gradient/to_gradient.cfg gradient/gradient.db
+
+# example of interstitial branching: a straight branch grows and afterwards
+# interstitial/lateral branches sprot from this main branch
+time PYTHONPATH=interstitial/:$PYTHONPATH $PYTHON ../Admin.py 1 interstitial/interstitial.cfg 
+$PYTHON ../scripts/generate_SWC_data.py interstitial/interstitial.cfg interstitial/interstitial.db
+$PYTHON ../scripts/helper_generate_movie.py interstitial/interstitial.cfg interstitial/interstitial.db
+$PYTHON ../scripts/generate_wire_plot.py interstitial/interstitial.cfg interstitial/interstitial.db
+$PYTHON ../scripts/generate_radii_plot.py interstitial/interstitial.cfg interstitial/interstitial.db
+
+# Example of non-builtin avoidance: avoidance is at small spatial scales and done by
+# the end user in the front's grwoth rules.
+time PYTHONPATH=detailed_avoidance/:$PYTHONPATH $PYTHON ../Admin.py 1 detailed_avoidance/avoidance.cfg 
+$PYTHON ../scripts/generate_SWC_data.py detailed_avoidance/avoidance.cfg detailed_avoidance/avoidance.db
+$PYTHON ../scripts/generate_wire_plot.py detailed_avoidance/avoidance.cfg detailed_avoidance/avoidance.db
+$PYTHON ../scripts/generate_radii_plot.py detailed_avoidance/avoidance.cfg detailed_avoidance/avoidance.db
+# $PYTHON ../scripts/helper_generate_movie.py detailed_avoidance/avoidance.cfg detailed_avoidance/avoidance.db
