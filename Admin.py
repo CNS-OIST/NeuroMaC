@@ -367,6 +367,14 @@ class Admin_Agent(object) :
                     # store putative synapse locations
                     if self.parser.has_option("system","syn_db"):
                         self._syn_to_db(syn_locs,sender)
+                elif message[0] == "Extra_front":
+                    sender = int(message[1])
+                    extra_front = message[2]
+                    # write changes to DB: TODO 2015-03-03
+                    self._temp_to_db([(extra_front.parent,[extra_front])],sender)
+
+                    # Update internal tree structure: TODO 2015-03-03
+                    self._expand_tree([(extra_front.parent,[extra_front])],sender)
 
         # write the DB with the morphologies
         self.conn.commit()

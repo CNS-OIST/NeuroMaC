@@ -362,6 +362,7 @@ class Subvolume_Agent(object) :
                 print "extend_front must return either list \
                    (for continuation, branch or termination or tuple (list and dict)"
                 sys.exit(0)
+            """Start processing the returned fronts"""
             if ret == None :
                 # that's the end of this front
                 pass
@@ -374,7 +375,7 @@ class Subvolume_Agent(object) :
                         print "parent (front): {0}".format(front.__dict__)
                         sys.exit(0)                        
                     re_activated_parents.remove(front)
-                
+                accepted_ret = []  
                 for f in ret :
                     if self._within_this_volume(f.xyz) :
                         """TODO: PERFORM CHECK: can this front be added at this location
@@ -396,13 +397,13 @@ class Subvolume_Agent(object) :
                                     f.interstitial = False
                                     print "Subvolume: RECEIVED AND MARKED INTERSTITIAL"
                                     #print "Subvolume: " + str(self.interstitial_fronts)
-                                         
                                     
                             new_fronts.append(f)
                             all_synapse_locs.extend(syn_locs)                                    
 
                             self.dynamic_constellation[f.entity_name].add(f)
                             pos_only_constellation[f.entity_name].append(f.xyz)
+                            accepted_ret.append(f)
                         else:
                             print "NOT VALID TO ADD THIS POINT"
                             pass
@@ -412,8 +413,9 @@ class Subvolume_Agent(object) :
                         message=("Migrate_Front",f,front) # send new front and parent
                         self.ppub.send_multipart(["Admin",pickle.dumps(message)])
                 # self._temp_to_db(front,ret)
-                print_with_rank(self.num,"parent h={0}, d[0]H={1}".format(front.__hash__(),ret[0].__hash__()))
-                changes.append((front,ret))
+                #print_with_rank(self.num,"parent h={0}, d[0]H={1}".format(front.__hash__(),ret[0].__hash__()))
+                #changes.append((front,ret))
+                changes.append((front,accepted_ret))
         self.active_fronts = new_fronts
         
         """should I only send a summary of dynamic and substances?
@@ -545,28 +547,55 @@ class Subvolume_Agent(object) :
                 Check validity of a new front against other fronts of
                 the same structure (front.entity_name).
                 """
+                
                 # OK to have: pathL < soma.diam
                 for o_front in self.dynamic_constellation[entity_name]:
+
+                    # if np.all(o_front.xyz==front.xyz):
+                    #     print "o_front==front <---------------{0},{1}".format(front,o_front)
+                    #     time.sleep(5)
+                    #     return False,[]
+                    on_radius = True
                     min_distance =  o_front.radius / 2.0
                     EN = entity_name.split("__")[0] 
                     if EN in self.allowed_self_dist:
                         min_distance = self.allowed_self_dist[EN]                
-                    
-                    D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
+
+                    # other front is the soma
                     if np.all(o_front.xyz == front.soma_pos):
                         # comparing to the soma
                         #print "checking against soma"
                         if front.path_length < o_front.radius*2:
                             pass
                         else:
+                            D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                             if D < o_front.radius:
                                 print "self colliding with soma"
                                 return False,[]
-                            
-                    # elif D < o_front.radius:
-                    elif D <= min_distance: 
-                        print "self refused on radius (D=%f)" % D
-                        return False,[]
+                    # other front is not the soma
+                    else:
+                        # is the other front the direct parent or daughter of this
+                        if front.parent == None or o_front.parent == None :
+                            D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
+                            if D < min_distance:
+                                print "self refused on radius (D=%f)" % D
+                                return False,[]
+                        else:
+                            if np.all(front.parent.xyz == o_front.xyz):
+                                #print "parent == other ({0}, {1})".format(front,o_front)
+                                continue
+                            if np.all(o_front.parent.xyz == front.xyz):
+                                #print "other.parent == front  ({0}, {1})".format(front,o_front)
+                                continue
+                            if front.parent == o_front.parent: # bifurcating bracnhes have the same parent
+                                continue                            
+
+                            # print "checking  ({0}, {1})".format(front,o_front)
+                            D = dist3D_segment_to_segment (front.xyz,front.parent.xyz,o_front.parent.xyz,o_front.xyz)
+                            if D < min_distance:
+                                print "self refused on segment distance (D=%{0} ({1}, {2}, min={3})".format(D,front,o_front,min_distance)
+                                return False,[]
+                            pass
         return ret, syn_locs        
 
     def _summarize_constellation_OLD(self,c) :
@@ -614,10 +643,15 @@ class Subvolume_Agent(object) :
                 self.dynamic_constellation[new_front.entity_name] = set()
                 self.dynamic_constellation[new_front.entity_name].add(new_front)
             self.active_fronts.append(new_front)
+            
 
-        # in case of new synapses, notify the Admin agent
-        msg = ("Extra_synapses","%06d"%self.num,syn_locs)
-        self.ppub.send_multipart(["Admin",pickle.dumps(msg)])        
+            # in case of new synapses, notify the Admin agent
+            msg = ("Extra_synapses","%06d"%self.num,syn_locs)
+            self.ppub.send_multipart(["Admin",pickle.dumps(msg)])
+
+            # notify the admin of this extra front
+            msg = ("Extra_front","%06d"%self.num,new_front)
+            self.ppub.send_multipart(["Admin",pickle.dumps(msg)])
         
     def _temp_to_db(self,front,c_fronts) :
         pos = front.xyz
