@@ -111,6 +111,7 @@ class Admin_Agent(object) :
                                             to_y real,\
                                             to_z real,\
                                             radius real,\
+                                            hash integer,\
                                             proc integer)''')
 
         # only if this parameter is set in the config file
@@ -308,7 +309,7 @@ class Admin_Agent(object) :
                     # start a tree with the somata
                     p3d = btmorph.P3D2(front.xyz,front.radius,1) # 1: SWC soma type
                     t_node = btmorph.SNode2(hash(front))
-                    t_node.content={'p3d':p3d}
+                    t_node.content={'p3d':p3d,'front':front}
                     self.non_swc_trees[front.entity_name]=btmorph.STree2()
                     self.non_swc_trees[front.entity_name].root = t_node
             else:
@@ -329,6 +330,7 @@ class Admin_Agent(object) :
                 message = ("Update",i,self.summarized_constellations)
                 self.ppub.send_multipart(["%06d"%dest,pickle.dumps(message)])
             responses = 0
+            fronts_to_be_retracted = []
             while responses < len(self.processor_ids) :
                 # socks = dict(self.poller.poll())
 
@@ -375,7 +377,14 @@ class Admin_Agent(object) :
 
                     # Update internal tree structure: TODO 2015-03-03
                     self._expand_tree([(extra_front.parent,[extra_front])],sender)
-
+                elif message[0]=="Request_retract":
+                    sender=int(message[1])
+                    front_to_retract = message[2]
+                    fronts_to_be_retracted.append(front_to_retract)
+            
+            # once all messages are received for one update round, process the retractions
+            self._process_retraction_requests(fronts_to_be_retracted)
+            self._convert_to_timed_SWC_and_write(i)
         # write the DB with the morphologies
         self.conn.commit()
 
@@ -385,6 +394,75 @@ class Admin_Agent(object) :
 
         # convert and write non_swc_trees
         self._convert_to_SWC_and_write()
+
+    def _process_retraction_requests(self,fronts_to_be_retracted):
+        """query the tree structure, find all points/fronts and send
+        this list back to *all* SVs. After they perform all updates in
+        one cycle, they prune their constellations.
+        This way, there is a propagation delay of one update cycle,
+        which seems reasonable compared to the slow dynamics
+        of retraction in biological systems
+        """        
+        if len(fronts_to_be_retracted)>0:
+            print_with_rank("_process_retraction_requests: {0}".format(fronts_to_be_retracted))
+            
+        if self.parser.has_option("system","retraction_order"):
+            removal_depth = self.parser.getint("system","retraction_order")
+        else:
+            removal_depth=1
+
+        part_of_retraction = []
+        conn = sqlite3.connect(self.db_file_name)
+        cursor = conn.cursor()
+        
+        for f in fronts_to_be_retracted:
+            # find front in tree
+            retract_node = self.non_swc_trees[f.entity_name].get_node_with_index(hash(f))
+            print_with_rank("found retract node: {0}".format(retract_node))
+            #time.sleep(5)
+
+            # find first node downstream of bifurcation node at order=order-removal_depth
+            path_to_root = self.non_swc_trees[f.entity_name].path_to_root(retract_node)
+            depth = 0
+            visited = []
+            highest_node = None
+            for node in path_to_root:
+                if len(node.children)==2: # this is a bifurcation point
+                    depth = depth+1
+                    if depth == removal_depth:
+                        break
+                # now the bifurcation node is spared and highest_node is the node after the bifurcation.
+                # if you want to remove the complete bifurcation (the other subtree mounted
+                # at the sibling, place the next 3 lines abouve the previous if-statement
+                if not node==self.non_swc_trees[f.entity_name].get_root():
+                    visited.append(node)
+                    highest_node = node                    
+            print_with_rank("found highest node: {0} (with no. child.: {1})".format(highest_node,len(highest_node.children)))
+
+            # get substree mounted at that identified node
+            tree_to_rem = self.non_swc_trees[f.entity_name].get_sub_tree(highest_node)
+            print_with_rank("subtree length: {0}".format(len(tree_to_rem.get_nodes())))
+            
+            # remove all thus found nodes on the Admin
+            self.non_swc_trees[f.entity_name].remove_node(highest_node)
+
+            # also from the DB
+            for n_node in tree_to_rem.get_nodes():
+                n_front = n_node.content['front']
+                self.conn.execute("DELETE FROM swc_data where hash={0}".format(hash(n_front)))
+            
+
+            # request the SVs to remvoe the same nodes/points
+            message = ("Perform_retraction",tree_to_rem.get_nodes())
+            for dest in self.processor_ids :
+                self.ppub.send_multipart(["%06d"%dest,pickle.dumps(message)])            
+
+            #time.sleep(3)
+
+        """send msg to all SVs notifying to remove any of the nodes to be retracted
+        this can be done blindly: send msg to all and they remove from their
+        constellation whatever they can remove
+        """
 
     def _convert_to_SWC_and_write(self):
         """ copy the trees and change the indices to increases indices,
@@ -420,6 +498,43 @@ class Admin_Agent(object) :
             file_n = "tree_{0}.swc".format(key)
             tree.write_SWC_tree_to_file(file_n)
 
+    def _convert_to_timed_SWC_and_write(self,time_stamp):
+        """ copy the trees and change the indices to increases indices,
+        not hash codes
+        """
+        import copy
+        copy_tree = copy.deepcopy(self.non_swc_trees)
+        
+        for (tree,key) in zip(copy_tree.values(),copy_tree.keys()):
+            root = tree.get_root()
+            nodes = tree.get_nodes()
+
+            print_with_rank("tree {0} has {1} nodes".format(key,len(nodes)))
+
+            root.index = 1
+            # add two segment to comply with NeuroMorpho.org three-point soma
+            r_p3d =root.content['p3d']
+            r_xyz = r_p3d.xyz
+            pos1 = btmorph.P3D2(np.array([r_xyz[0],r_xyz[1]-r_p3d.radius,r_xyz[2]]),radius=r_p3d.radius,type=1)#1 = swc type
+            pos2 = btmorph.P3D2(np.array([r_xyz[0],r_xyz[1]-r_p3d.radius,r_xyz[2]]),radius=r_p3d.radius,type=1)#1 = swc type
+            sub1 = btmorph.SNode2(2)
+            sub1.content={'p3d':pos1}
+            sub2 = btmorph.SNode2(3)
+            sub2.content={'p3d':pos2}
+            tree.add_node_with_parent(sub1,root)
+            tree.add_node_with_parent(sub2,root)
+
+            # re-number all other nodes with increasing indices
+            index = 4
+            for node in nodes:
+                if not node==root:
+                    node.index = index
+                    index = index +1
+
+            # write the SWC compliant tree to a file
+            file_n = "tree_{0}_T{1}.swc".format(key,time_stamp)
+            tree.write_SWC_tree_to_file(file_n)            
+
     def _temp_to_db(self,changes,sender):#front,c_fronts) :
         for front,c_fronts in changes :
             pos = front.xyz
@@ -430,8 +545,8 @@ class Admin_Agent(object) :
                 name = c_front.entity_name
                 radius = c_front.radius
                 swc_type = c_front.swc_type
-                values = (None,name,swc_type,pos[0],pos[1],pos[2],cpos[0],cpos[1],cpos[2],radius,"%06d"%int(sender))
-                self.conn.execute("INSERT into swc_data VALUES (?,?,?,?,?,?,?,?,?,?,?)",values )
+                values = (None,name,swc_type,pos[0],pos[1],pos[2],cpos[0],cpos[1],cpos[2],radius,hash(c_front),"%06d"%int(sender))
+                self.conn.execute("INSERT into swc_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",values )
         #self.conn.commit()                        
 
     def _expand_tree(self,changes,sender):
@@ -453,8 +568,9 @@ class Admin_Agent(object) :
 
                 p3d = btmorph.P3D2(cpos,radius,swc_type) 
                 t_node = btmorph.SNode2(daughter_id)
-                t_node.content={'p3d':p3d}
-                self.non_swc_trees[front.entity_name].add_node_with_parent(t_node,parent_node)                
+                t_node.content={'p3d':p3d,'front':c_front}
+                self.non_swc_trees[front.entity_name].add_node_with_parent(t_node,parent_node)
+                del(t_node)
                         
     def _syn_to_db(self,syn_locs,sender):
         for syn_loc in syn_locs:

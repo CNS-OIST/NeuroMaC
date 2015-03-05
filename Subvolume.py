@@ -107,8 +107,8 @@ class Subvolume_Agent(object) :
             if message == "Done" :
                 running = False
                 print_with_rank(self.num,"going home")
-            elif message == "Update" :
-                print_with_rank(self.num," update")
+            # elif message == "Update" :
+            #     print_with_rank(self.num," update")
             elif message[0] == "Init_SV" :
                 #print_with_rank(self.num,"Init_SV received")
                 self._process_init_sv(message)
@@ -122,7 +122,35 @@ class Subvolume_Agent(object) :
                 self._process_request_constellation(message)                
             elif message[0] == "Add_Front" :
                 self._add_front(message)
+            elif message[0] == "Perform_retraction":
+                self._perform_retraction_request(message)
 
+    def _perform_retraction_request(self,message):
+        nodes_to_retract = message[1]
+        print_with_rank(self.num, "Received retraction request from Admin, list: {0}".format(nodes_to_retract))
+        #time.sleep(1.5)
+
+        # remove from dynamic constellation, active_fronts
+        for node in nodes_to_retract:
+            index = node.index
+            print "node: ", node, ", content: ", node.get_content()
+            front = node.get_content()['front']
+            print "index to retract: {0}".format(index)
+            # check if a fron exist with that has, if yes, remove
+            for key in self.dynamic_constellation:
+                try:
+                    self.dynamic_constellation[key].remove(front)
+                    print "Esception DID NOT OCCUR"
+                except Exception as e:
+                    print "Esception when removing from dynamic_constellation: ", e 
+
+            # check if exist oin active fronts
+            try:
+                self.active_fronts.remove(front)
+                print "Exception DID NOT OCCUR"
+            except Exception as e:
+                print "Exception occured while trying to remove retraction front from active_fronts: ",e
+                
     def _process_update(self,message) :
         print_with_rank(self.num," received Update from admin (cycle: %s)" % message[1])
         
@@ -194,16 +222,6 @@ class Subvolume_Agent(object) :
     def _process_reply_constellation(self,message):
         # merge received constellation in an expanded one
         temp_con = message[1]
-
-        # try:
-        #     total_l = sum([len(v) for k,v in temp_con.iteritems()])
-        #     no_keys = len(temp_con.keys())
-        #     print_with_rank(self.num, "L(temp_con): %i, no_keys: %i" % \
-        #                    (total_l,no_keys))
-        #     print_with_rank(self.num, "temp_con.keys: " + str(temp_con.keys()))
-        #     print_with_rank(self.num, "temp_con.keys: " + str(temp_con.keys()))
-        # except Exception:
-        #     pass
 
         # 2014-08-06       
         self.neighbor_constellation = self._merge_constellations(self.neighbor_constellation,temp_con)
@@ -286,6 +304,7 @@ class Subvolume_Agent(object) :
         merged_constellation = self._merge_constellations(merged_constellation,self.neighbor_constellation)
         merged_constellation = self._merge_constellations(merged_constellation,self.distal_constellation)
         merged_constellation = self._merge_constellations(merged_constellation,self.substances_constellation)
+        self.merged_constellation = merged_constellation
         
         pos_only_constellation = self._get_pos_only_constellation(merged_constellation)
 
@@ -336,7 +355,7 @@ class Subvolume_Agent(object) :
                 # print "update_info: ", update_info
                 entity_name = update_info.keys()[0]
                 entity_front = update_info[entity_name] # 2014-08-11
-                
+
                 # # 2014-02-19
                 # 2014-08-11
                 # store and...
@@ -348,22 +367,32 @@ class Subvolume_Agent(object) :
                     self.substances_constellation[entity_name] = set()
                     self.substances_constellation[entity_name].add(entity_front)
                     pos_only_constellation[entity_name] = []
-                    pos_only_constellation[entity_name].append(entity_front.xyz)
-
+                    pos_only_constellation[entity_name].append(entity_front.xyz)                
                 # set the ret for subsequent processing (without updating my code)
                 ret = ret[0]
-                #print_with_rank(self.num, "SECRETION NOT YET IMPLEMENTED")
-                #time.sleep(100)
                                 
             elif isinstance(ret,list) or ret == None:
                 pass # front is only extending
+            elif isinstance(ret,int):
+                pass # front has to be retracted: deal with later
             else :
                 print "type: ",type(ret)
                 print "extend_front must return either list \
                    (for continuation, branch or termination or tuple (list and dict)"
                 sys.exit(0)
             """Start processing the returned fronts"""
-            if ret == None :
+            if ret == -1:
+                """retract!
+                1. Tell the admin
+                2. Get list of fronts (points?) to be retracted
+                3. Remove all fronts/points from constellations
+
+                Item 2 & 3 are to be performed after all fronts are updated;
+                after receiving a notification from the Admin
+                """
+                msg = ("Request_retract","%06d"%self.num,front)
+                self.ppub.send_multipart(["Admin",pickle.dumps(msg)])
+            elif ret == None :
                 # that's the end of this front
                 pass
             else :
@@ -382,7 +411,7 @@ class Subvolume_Agent(object) :
                         If yes: ok
                         If not: wiggle a few times and check each time, if too difficut: discard front
                         """
-                        valid,syn_locs = self._valid_and_wiggle(f)
+                        valid,syn_locs = self._valid_and_wiggle(f,merged_constellation)
                         
                         if valid:
                             # potential interstitial branch?
@@ -436,9 +465,9 @@ class Subvolume_Agent(object) :
 
         if debug_mem:
             self._gather_constellation_size(merged_constellation)
-
-    def _valid_and_wiggle(self,f):
-        valid,syn_locs = self._is_front_valid(f,check_synapses=self.parser.has_option("system","syn_db"))
+        
+    def _valid_and_wiggle(self,f,merged_constellation):
+        valid,syn_locs = self._is_front_valid(f,merged_constellation,check_synapses=self.parser.has_option("system","syn_db"))
         attempts = 0
         avoidance_attempts = 0
         if self.parser.has_option("system","avoidance_attempts"):
@@ -508,14 +537,15 @@ class Subvolume_Agent(object) :
             print e
             time.sleep(20)
          
-    def _is_front_valid(self,front,check_synapses=False):
+    def _is_front_valid(self,front,merged_constellation,check_synapses=False):
         ret = True
         syn_locs = []
         # check against all developing processes
         for entity_name in self.dynamic_constellation:
             #print "checking validity of entity_name:", entity_name
             if not entity_name == front.entity_name:
-                for o_front in self.dynamic_constellation[entity_name]:
+                #for o_front in self.dynamic_constellation[entity_name]:
+                for o_front in merged_constellation[entity_name]:
                     if front.parent == None or o_front.parent == None:
                         D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                     else:
@@ -547,10 +577,12 @@ class Subvolume_Agent(object) :
                 Check validity of a new front against other fronts of
                 the same structure (front.entity_name).
                 """
-                
                 # OK to have: pathL < soma.diam
-                for o_front in self.dynamic_constellation[entity_name]:
-
+                #for o_front in self.dynamic_constellation[entity_name]:
+                xxx = len(self.dynamic_constellation[entity_name])
+                yyy = len(merged_constellation[entity_name])
+                print "check again itself, L(D)={0}, L(M)={1}".format(xxx,yyy)
+                for o_front in merged_constellation[entity_name]:
                     # if np.all(o_front.xyz==front.xyz):
                     #     print "o_front==front <---------------{0},{1}".format(front,o_front)
                     #     time.sleep(5)
@@ -570,7 +602,8 @@ class Subvolume_Agent(object) :
                         else:
                             D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                             if D < o_front.radius:
-                                print "self colliding with soma"
+                                print "self colliding with soma++++++++++++++++++++++++++++++++++++"
+                                # time.sleep(5)
                                 return False,[]
                     # other front is not the soma
                     else:
@@ -578,7 +611,8 @@ class Subvolume_Agent(object) :
                         if front.parent == None or o_front.parent == None :
                             D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                             if D < min_distance:
-                                print "self refused on radius (D=%f)" % D
+                                print "self refused on radius (D=%f)+++++++++++++++++++++++++++++" % D
+                                # time.sleep(5)
                                 return False,[]
                         else:
                             if np.all(front.parent.xyz == o_front.xyz):
@@ -593,7 +627,8 @@ class Subvolume_Agent(object) :
                             # print "checking  ({0}, {1})".format(front,o_front)
                             D = dist3D_segment_to_segment (front.xyz,front.parent.xyz,o_front.parent.xyz,o_front.xyz)
                             if D < min_distance:
-                                print "self refused on segment distance (D=%{0} ({1}, {2}, min={3})".format(D,front,o_front,min_distance)
+                                print "self refused on segment distance (D=%{0} ({1}, {2}, min={3})+++++++++++++++++++".format(D,front,o_front,min_distance)
+                                # time.sleep(5)
                                 return False,[]
                             pass
         return ret, syn_locs        
@@ -632,10 +667,18 @@ class Subvolume_Agent(object) :
         """
         new_front = message[1]
 
+        # merged_constellation = copy.copy(self.static_constellation)
+        # merged_constellation = self._merge_constellations(merged_constellation,self.dynamic_constellation)
+        # merged_constellation = self._merge_constellations(merged_constellation,self.neighbor_constellation)
+        # merged_constellation = self._merge_constellations(merged_constellation,self.distal_constellation)
+        # merged_constellation = self._merge_constellations(merged_constellation,self.substances_constellation)
+        
         """ Migrate front (2014-10-06)
         """
         # check if position is occupied already
-        valid,syn_locs = self._valid_and_wiggle(new_front)
+        valid,syn_locs = self._valid_and_wiggle(new_front,self.merged_constellation)
+        print_with_rank(self.num,"directly after migration@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+        #time.sleep(5)
         if valid:
             if new_front.entity_name in self.dynamic_constellation:
                 self.dynamic_constellation[new_front.entity_name].add(new_front)

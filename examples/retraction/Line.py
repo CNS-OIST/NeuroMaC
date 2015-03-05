@@ -14,5 +14,5 @@ L_NORM=4.0
 
 def extend_front(front,seed,constellation,interstitial) :
     new_pos =front.xyz + np.array([5,0,-2])
-    new_front = prepare_next_front(front,new_pos,set_radius=2.0)
+    new_front = prepare_next_front(front,new_pos,set_radius=1.0)
     return [new_front]

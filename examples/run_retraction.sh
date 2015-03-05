@@ -12,6 +12,6 @@ PYTHON="python2.7"
 # the neurite is terminated
 time PYTHONPATH=retraction/:$PYTHONPATH $PYTHON ../Admin.py 1 retraction/retraction.cfg 
 $PYTHON ../scripts/generate_SWC_data.py retraction/retraction.cfg retraction/retraction.db
-$PYTHON ../scripts/helper_generate_movie.py retraction/retraction.cfg retraction/retraction.db
+#$PYTHON ../scripts/helper_generate_movie.py retraction/retraction.cfg retraction/retraction.db
 $PYTHON ../scripts/generate_wire_plot.py retraction/retraction.cfg retraction/retraction.db
 $PYTHON ../scripts/generate_radii_plot.py retraction/retraction.cfg retraction/retraction.db
