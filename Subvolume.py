@@ -127,29 +127,31 @@ class Subvolume_Agent(object) :
 
     def _perform_retraction_request(self,message):
         nodes_to_retract = message[1]
-        print_with_rank(self.num, "Received retraction request from Admin, list: {0}".format(nodes_to_retract))
+        print_with_rank(self.num, "Received retraction request from Admin")
         #time.sleep(1.5)
 
         # remove from dynamic constellation, active_fronts
         for node in nodes_to_retract:
             index = node.index
-            print "node: ", node, ", content: ", node.get_content()
+            #print "node: ", node, ", content: ", node.get_content()
             front = node.get_content()['front']
-            print "index to retract: {0}".format(index)
+            #print "index to retract: {0}".format(index)
             # check if a fron exist with that has, if yes, remove
             for key in self.dynamic_constellation:
                 try:
                     self.dynamic_constellation[key].remove(front)
-                    print "Esception DID NOT OCCUR"
+                    #print "Esception DID NOT OCCUR"
                 except Exception as e:
-                    print "Esception when removing from dynamic_constellation: ", e 
+                    #print "Esception when removing from dynamic_constellation: ", e
+                    pass
 
             # check if exist oin active fronts
             try:
                 self.active_fronts.remove(front)
-                print "Exception DID NOT OCCUR"
+                # print "Exception DID NOT OCCUR"
             except Exception as e:
-                print "Exception occured while trying to remove retraction front from active_fronts: ",e
+                # print "Exception occured while trying to remove retraction front from active_fronts: ",e
+                pass
                 
     def _process_update(self,message) :
         print_with_rank(self.num," received Update from admin (cycle: %s)" % message[1])
@@ -381,7 +383,7 @@ class Subvolume_Agent(object) :
                    (for continuation, branch or termination or tuple (list and dict)"
                 sys.exit(0)
             """Start processing the returned fronts"""
-            if ret == -1:
+            if isinstance(ret,int):#ret == -1:
                 """retract!
                 1. Tell the admin
                 2. Get list of fronts (points?) to be retracted
@@ -390,7 +392,7 @@ class Subvolume_Agent(object) :
                 Item 2 & 3 are to be performed after all fronts are updated;
                 after receiving a notification from the Admin
                 """
-                msg = ("Request_retract","%06d"%self.num,front)
+                msg = ("Request_retract","%06d"%self.num,front,abs(ret))
                 self.ppub.send_multipart(["Admin",pickle.dumps(msg)])
             elif ret == None :
                 # that's the end of this front
@@ -581,7 +583,7 @@ class Subvolume_Agent(object) :
                 #for o_front in self.dynamic_constellation[entity_name]:
                 xxx = len(self.dynamic_constellation[entity_name])
                 yyy = len(merged_constellation[entity_name])
-                print "check again itself, L(D)={0}, L(M)={1}".format(xxx,yyy)
+                #print "check again itself, L(D)={0}, L(M)={1}".format(xxx,yyy)
                 for o_front in merged_constellation[entity_name]:
                     # if np.all(o_front.xyz==front.xyz):
                     #     print "o_front==front <---------------{0},{1}".format(front,o_front)

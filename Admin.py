@@ -325,6 +325,10 @@ class Admin_Agent(object) :
         2. wait for replies
         3. proceed to next Update cycle
         """
+        keep_snapshots = False
+        if self.parser.has_option("system","keep_snapshots"):
+            keep_snapshots=self.parser.getboolean("system","keep_snapshots")
+                    
         for i in range(self.parser.getint("system","no_cycles")) :
             for dest in self.processor_ids :
                 message = ("Update",i,self.summarized_constellations)
@@ -380,11 +384,13 @@ class Admin_Agent(object) :
                 elif message[0]=="Request_retract":
                     sender=int(message[1])
                     front_to_retract = message[2]
-                    fronts_to_be_retracted.append(front_to_retract)
+                    retraction_depth=message[3]
+                    fronts_to_be_retracted.append((front_to_retract,retraction_depth))
             
             # once all messages are received for one update round, process the retractions
             self._process_retraction_requests(fronts_to_be_retracted)
-            self._convert_to_timed_SWC_and_write(i)
+            if keep_snapshots:
+                self._convert_to_SWC_and_write(time_stamp=i)
         # write the DB with the morphologies
         self.conn.commit()
 
@@ -405,28 +411,45 @@ class Admin_Agent(object) :
         """        
         if len(fronts_to_be_retracted)>0:
             print_with_rank("_process_retraction_requests: {0}".format(fronts_to_be_retracted))
-            
-        if self.parser.has_option("system","retraction_order"):
-            removal_depth = self.parser.getint("system","retraction_order")
-        else:
-            removal_depth=1
+
+        # removal_depth=0
+        # if self.parser.has_option("system","retraction_order"):
+        #     removal_depth = self.parser.getint("system","retraction_order")
 
         part_of_retraction = []
         conn = sqlite3.connect(self.db_file_name)
         cursor = conn.cursor()
         
-        for f in fronts_to_be_retracted:
+        for (f,removal_depth) in fronts_to_be_retracted:
             # find front in tree
             retract_node = self.non_swc_trees[f.entity_name].get_node_with_index(hash(f))
-            print_with_rank("found retract node: {0}".format(retract_node))
+            print_with_rank("found retract node: {0},xyz={1}".format(retract_node,retract_node.content['front'].xyz))
             #time.sleep(5)
 
-            # find first node downstream of bifurcation node at order=order-removal_depth
+            """find first node downstream of bifurcation node at order=order-removal_depth
+            To avoid pruning the whole tree, the depth of removal should be smaller than
+            the order of the node that iniated the retraction
+            """
+            order_of_node = self.non_swc_trees[f.entity_name].order_of_node(retract_node)+1# not an SWC tree, therefore, +1 (whole stem has order=0)
             path_to_root = self.non_swc_trees[f.entity_name].path_to_root(retract_node)
+
+            #print("[before adjustment] removal_depth={0} (node order={1})".format(removal_depth,order_of_node))
+
+            # adjust removal_depth if neccessary
+            if removal_depth>order_of_node:
+                removal_depth=order_of_node
+                print("[sleep] removal_depth={0} (node order={1})".format(removal_depth,order_of_node))
+
+            print_with_rank("retraction removal_depth={0} (node order={1}) [AFTER adjustment] ".format(removal_depth,order_of_node))
+            time.sleep(5)
+            
             depth = 0
             visited = []
             highest_node = None
-            for node in path_to_root:
+            for node in path_to_root[:-1]:
+                #print "checking node: {0}".format(node.content['front'].xyz)
+                if self.non_swc_trees[f.entity_name].is_root(node):
+                    break
                 if len(node.children)==2: # this is a bifurcation point
                     depth = depth+1
                     if depth == removal_depth:
@@ -437,11 +460,11 @@ class Admin_Agent(object) :
                 if not node==self.non_swc_trees[f.entity_name].get_root():
                     visited.append(node)
                     highest_node = node                    
-            print_with_rank("found highest node: {0} (with no. child.: {1})".format(highest_node,len(highest_node.children)))
+            #print_with_rank("found highest node: {0} (with no. child.: {1})".format(highest_node,len(highest_node.children)))
 
             # get substree mounted at that identified node
             tree_to_rem = self.non_swc_trees[f.entity_name].get_sub_tree(highest_node)
-            print_with_rank("subtree length: {0}".format(len(tree_to_rem.get_nodes())))
+            #print_with_rank("subtree length: {0}".format(len(tree_to_rem.get_nodes())))
             
             # remove all thus found nodes on the Admin
             self.non_swc_trees[f.entity_name].remove_node(highest_node)
@@ -464,41 +487,7 @@ class Admin_Agent(object) :
         constellation whatever they can remove
         """
 
-    def _convert_to_SWC_and_write(self):
-        """ copy the trees and change the indices to increases indices,
-        not hash codes
-        """
-        for (tree,key) in zip(self.non_swc_trees.values(),self.non_swc_trees.keys()):
-            root = tree.get_root()
-            nodes = tree.get_nodes()
-
-            print_with_rank("tree {0} has {1} nodes".format(key,len(nodes)))
-
-            root.index = 1
-            # add two segment to comply with NeuroMorpho.org three-point soma
-            r_p3d =root.content['p3d']
-            r_xyz = r_p3d.xyz
-            pos1 = btmorph.P3D2(np.array([r_xyz[0],r_xyz[1]-r_p3d.radius,r_xyz[2]]),radius=r_p3d.radius,type=1)#1 = swc type
-            pos2 = btmorph.P3D2(np.array([r_xyz[0],r_xyz[1]-r_p3d.radius,r_xyz[2]]),radius=r_p3d.radius,type=1)#1 = swc type
-            sub1 = btmorph.SNode2(2)
-            sub1.content={'p3d':pos1}
-            sub2 = btmorph.SNode2(3)
-            sub2.content={'p3d':pos2}
-            tree.add_node_with_parent(sub1,root)
-            tree.add_node_with_parent(sub2,root)
-
-            # re-number all other nodes with increasing indices
-            index = 4
-            for node in nodes:
-                if not node==root:
-                    node.index = index
-                    index = index +1
-
-            # write the SWC compliant tree to a file
-            file_n = "tree_{0}.swc".format(key)
-            tree.write_SWC_tree_to_file(file_n)
-
-    def _convert_to_timed_SWC_and_write(self,time_stamp):
+    def _convert_to_SWC_and_write(self,time_stamp=None):
         """ copy the trees and change the indices to increases indices,
         not hash codes
         """
@@ -509,8 +498,6 @@ class Admin_Agent(object) :
             root = tree.get_root()
             nodes = tree.get_nodes()
 
-            print_with_rank("tree {0} has {1} nodes".format(key,len(nodes)))
-
             root.index = 1
             # add two segment to comply with NeuroMorpho.org three-point soma
             r_p3d =root.content['p3d']
@@ -532,8 +519,11 @@ class Admin_Agent(object) :
                     index = index +1
 
             # write the SWC compliant tree to a file
-            file_n = "tree_{0}_T{1}.swc".format(key,time_stamp)
-            tree.write_SWC_tree_to_file(file_n)            
+            if time_stamp==None:
+                file_n = "tree_{0}.swc".format(key)
+            else:
+                file_n = "tree_{0}_T{1}.swc".format(key,time_stamp)
+            tree.write_SWC_tree_to_file(file_n)
 
     def _temp_to_db(self,changes,sender):#front,c_fronts) :
         for front,c_fronts in changes :
@@ -564,7 +554,7 @@ class Admin_Agent(object) :
                 radius = c_front.radius
                 swc_type = c_front.swc_type
                 daughter_id = hash(c_front)
-                print_with_rank("parent hash={0}, daughter hash={1}".format(parent_id,daughter_id))
+                #print_with_rank("parent hash={0}, daughter hash={1}".format(parent_id,daughter_id))
 
                 p3d = btmorph.P3D2(cpos,radius,swc_type) 
                 t_node = btmorph.SNode2(daughter_id)
