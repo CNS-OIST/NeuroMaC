@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 # import zmq
 # context = zmq.Context(1)
 # # set up the proxy, for all-to-all capabilities
@@ -22,8 +45,8 @@ def main():
         backend.bind("tcp://*:5560")
         zmq.device(zmq.FORWARDER, frontend, backend)
     except Exception, e:
-        print e
-        print "bringing down zmq device"
+        print (e)
+        print ("bringing down zmq device")
     finally:
         pass
         frontend.close()

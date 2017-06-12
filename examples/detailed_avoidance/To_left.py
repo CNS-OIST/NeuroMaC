@@ -27,11 +27,11 @@ def extend_front(front,seed,constellation) :
               normalize_length(target-front.xyz,L_NORM ) + \
               normalize_length(unit_sample_on_sphere(),L_NORM/1.0 ) # was 10
             new_front = prepare_next_front(front,new_pos,set_radius=1.0)
-            print "[debug] To_left.py:: still far"
+            print ("[debug] To_left.py:: still far")
         else:
             new_pos = front.xyz + normalize_length(-1*dir_to_entity + unit_sample_on_sphere(),L_NORM)
             new_front = prepare_next_front(front,new_pos,set_radius=1.0)
-            print "[debug] To_left.py:: potential intercept avoided"
+            print ("[debug] To_left.py:: potential intercept avoided")
     else: # during the first extension cycle, no distal info is known locally
         new_pos =front.xyz + normalize_length(target-front.xyz,L_NORM )
         new_front = prepare_next_front(front,new_pos,set_radius=1.0)        

@@ -23,7 +23,7 @@ def extend_front(front,seed,constellation) :
     else :
         rnd_dir = unit_sample_on_sphere()
         other_entities = get_entity("pia",constellation)
-        #print "pia entities: ", other_entities
+        #print ("pia entities: ", other_entities)
         dir_to_pia = direction_to(front,other_entities,what="nearest")
         new_pos = front.xyz + normalize_length(dir_to_pia,10)
         new_front = prepare_next_front(front,new_pos,radius_factor=0.5,add_order=False)

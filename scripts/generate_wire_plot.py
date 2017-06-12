@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import timeit
 import sys,time
 import random
@@ -32,7 +55,7 @@ def plot_as_wires(cfg_file,db_name,syn_db) :
     names =[]
     c=0
     for entity in rets :
-        print "entity: %s with color %s" % (str(entity[0]),colors[c%len(colors)])
+        print ("entity: %s with color %s" % (str(entity[0]),colors[c%len(colors)]))
         names.append(entity[0])
         c_mapping[str(entity[0])] = colors[c%len(colors)]
         c = c + 1
@@ -103,7 +126,7 @@ def plot_as_wires(cfg_file,db_name,syn_db) :
             zs.append(ret[4])
             count = count + 1
         ax.scatter(xs,ys,zs,c="b",marker="o")
-        print "no_synapses (count)=", count
+        print ("no_synapses (count)=", count)
     t0 = timer()
     if db_name.startswith(".."):
         out_name = db_name.split("/")[-1].split(".")[0]+"_wire.pdf"
@@ -111,7 +134,7 @@ def plot_as_wires(cfg_file,db_name,syn_db) :
         out_name = db_name.split(".")[0]+"_wire.pdf"
     plt.savefig(out_name)
     t1 = timer()
-    print "writing the figure took: %fs" % (t1-t0)
+    print ("writing the figure took: %fs" % (t1-t0))
     times.append(t1-t0)
     return np.sum(times)
 
@@ -124,4 +147,4 @@ if __name__=="__main__" :
     except Exception:
         pass
     tt = plot_as_wires(cfg_file,db_name,syn_db)
-    print 'total time for wires: ', tt
+    print ('total time for wires: ', tt)

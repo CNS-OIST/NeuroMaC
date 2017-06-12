@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import timeit
 import sys,time
 import random
@@ -28,7 +51,7 @@ def plot_with_radii() :
     names =[]
     c=0
     for entity in rets :
-        print "entity: %s with color %s" % (str(entity[0]),colors[c%len(colors)])
+        print ("entity: %s with color %s" % (str(entity[0]),colors[c%len(colors)]))
         names.append(entity[0])
         c_mapping[str(entity[0])] = colors[c%len(colors)]
         c = c + 1
@@ -64,7 +87,7 @@ def plot_with_radii() :
         ax.plot_surface(x, y, z,rstride=2, cstride=2, color=c_mapping[name],linewidth=0, antialiased=False, shade=False)
         i = 0
         points = []
-        print 'plotting: ', name 
+        print ('plotting: ', name)
         for entity in rets :
             # from_point = np.array([entity[2],entity[3],entity[4]])
             # to_point = np.array([entity[5],entity[6],entity[7]])
@@ -84,7 +107,7 @@ def plot_with_radii() :
         out_name = db_name.split(".")[0]+"_radii.pdf"    
     plt.savefig(out_name)
     t1 = timer()
-    print "writing the figure took: %fs" % (t1-t0)
+    print ("writing the figure took: %fs" % (t1-t0))
     times.append(t1-t0)
     return np.sum(times)
 
@@ -92,4 +115,4 @@ if __name__=="__main__" :
     cfg_file = sys.argv[1]
     db_name = sys.argv[2]
     tt = plot_with_radii()
-    print 'total time for radii: ', tt
+    print ('total time for radii: ', tt)

@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 """
 max subvolumes=999999 (SV addresses are: %06d)
 """
@@ -18,12 +41,12 @@ from multiprocessing import Process
 import inspect
 def _me(bool) :
     if(bool) :
-        print '%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3])
+        print ('%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3]))
     else :
         pass
 
 def print_with_rank(message) :
-    print '%s \t \t%s' % (inspect.stack()[1][1], message)
+    print ('%s \t \t%s' % (inspect.stack()[1][1], message))
 
 class Admin_Agent(object) :
     """
@@ -89,7 +112,7 @@ class Admin_Agent(object) :
             msg = self.socket_pull.recv()
             print_with_rank(str(msg))
             registered = registered + 1
-        print "all Subvolumes registered. Proceed!"
+        print ("all Subvolumes registered. Proceed!")
 
     def _setup_DBs(self) :
         self.db_file_name = self.parser.get("system","out_db")
@@ -144,7 +167,7 @@ class Admin_Agent(object) :
         b0 = np.array(boundary[0])
         b1 = np.array(boundary[1])
         for entity in self.substrate :
-            print "checking entity: ", entity, ", boundary: ", boundary
+            print ("checking entity: ", entity, ", boundary: ", boundary)
 
             # 2014-08-08, make all internals sets of fronts.. bit redundant memory wise, but easy for administration
             sub_substrate[entity] = set()
@@ -163,14 +186,14 @@ class Admin_Agent(object) :
         for name,value in self.parser.items("substrate"):
             if name.startswith("virtual"):
                 virtual_name = name.split("_")[1]
-                print  "Found virtual: ",virtual_name
+                print  ("Found virtual: ",virtual_name)
                 virtual_substrate.update({virtual_name:eval(self.parser.get("substrate",name))})
 
         if virtual_substrate == {}:
-            print "No virtual substrates found"
+            print ("No virtual substrates found")
             #time.sleep(5)
         else:
-            print "virtual_substrate:\n",virtual_substrate
+            print ("virtual_substrate:\n",virtual_substrate)
             #time.sleep(5)
         return virtual_substrate
                                             
@@ -375,7 +398,7 @@ class Admin_Agent(object) :
             # values = (None,pre_front.entity_name,prp[0],prp[1],prp[2],post_front.entity_name,pop[0],pop[1],pop[2])
             values = (None,pre_name,pre_x,pre_y,pre_z,post_name,post_x,post_y,post_z)
             
-            print "values: ", values
+            print ("values: ", values)
             self.syn_conn.execute("INSERT into synapses VALUES (?,?,?,?,?,?,?,?,?)",values)
 
         
@@ -412,7 +435,7 @@ class Admin_Agent(object) :
         self.context.destroy()
 
 def start_proxy(cfg_file) :
-    print "starting proxy"
+    print ("starting proxy")
     parser = SafeConfigParser()
     parser.read(cfg_file)
     try:
@@ -430,7 +453,7 @@ def start_proxy(cfg_file) :
         print_with_rank("PROXY forwarded <-----")
         print_with_rank("PROXY up and running <-----")
     except Exception, e:
-        print e
+        print (e)
         print_with_rank("PROXY encountered an error. PROXY down")
     finally:
         print_with_rank("PROXY finally down")
@@ -457,14 +480,14 @@ if __name__=="__main__" :
         p = Process(target=Subvolume.start,args=(i,cfg_file))
         svs.append(p)
         svs[-1].start()
-    print "Admin going to start with cfg_file: ", cfg_file
+    print ("Admin going to start with cfg_file: ", cfg_file)
     admin = Admin_Agent(no+1,cfg_file)
-    print "Admin is ready"
+    print ("Admin is ready")
     time.sleep(0.5)
-    print "Switching off proxy"
+    print ("Switching off proxy")
     proxy.terminate()
-    print "Proxy switched off"
+    print ("Proxy switched off")
     for sv in svs :
         sv.terminate()
-    print "Admin done. Terminated."
+    print ("Admin done. Terminated.")
     sys.exit(0) # don't understand why it doesn't clean properly...

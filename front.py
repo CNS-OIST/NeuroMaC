@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import numpy as np
 
 import time # only for testing
@@ -72,7 +95,7 @@ class Front(object) :
             if not self.soma_pos == None:
                 return False
         else:
-            #print "self.soma_pos=", self.soma_pos, ", other.soma_pos=",other.soma_pos
+            #print ("self.soma_pos=", self.soma_pos, ", other.soma_pos=",other.soma_pos)
             if not np.allclose(self.soma_pos,other.soma_pos): return False
         if not self.parent == other.parent: return False
 
@@ -132,7 +155,7 @@ class Front(object) :
                 b1 = np.array(rectangle[1])
                 if np.all(self.xyz>b0) and np.all(self.xyz<b1): # works for rectangle only...
                     setattr(self,key,x)
-                    print ">>>> FOUND: ",key," = ",x
+                    print (">>>> FOUND: ",key," = ",x)
                     
 
         # outsource the real call to extend a front

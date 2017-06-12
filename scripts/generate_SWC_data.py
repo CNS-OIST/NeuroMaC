@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import timeit
 import sys,time
 import random
@@ -25,10 +48,10 @@ def collect_swc_data(db_name,cfg_file) :
     prefix=""
     if db_name.startswith(".."):
         prefix = db_name.split("/")
-        print ".. prefix: ", prefix,"\nNot sure this works correctly..."
+        print (".. prefix: ", prefix,"\nNot sure this works correctly...")
     else:
         prefix = "/".join(db_name.split(".")[0].split("/")[:-1])
-        print "prefix: ", prefix
+        print ("prefix: ", prefix)
 
     all_points = {}
     soma_radius = None
@@ -39,14 +62,14 @@ def collect_swc_data(db_name,cfg_file) :
         points = {}
         is_soma = True
         
-        print 'processing: ', name
+        print ('processing: ', name)
         for entity in rets :
             contents = {}
             index = entity[0]
             if is_soma:
                 points['soma'] = (entity[3],entity[4],entity[5])
                 soma_radius = parser.getint(entity[1].split("__")[0],"soma_radius")
-                print "found soma_radius: ", soma_radius
+                print ("found soma_radius: ", soma_radius)
                 is_soma = False
             contents['name'] = entity[1]
             contents['swc_type'] = entity[2]
@@ -59,15 +82,15 @@ def collect_swc_data(db_name,cfg_file) :
 
 def write_swc(name,points,prefix,soma_radius) :
     if len(prefix) > 0:
-        print "writing to file: ", prefix+"/"+name+".swc"
+        print ("writing to file: ", prefix+"/"+name+".swc")
         writer = open(prefix+"/"+name+".swc","w")
     else:
-        print "writing to file: ", name+".swc"
+        print ("writing to file: ", name+".swc")
         writer = open(name+".swc","w")
         
     # insert the soma + first segments
     sp = points['soma']
-    print "construcing som with soma_radius: ", soma_radius
+    print ("construcing soma with soma_radius: ", soma_radius)
     soma_str = "1 1 %s %s %s %s -1\n" % (sp[0],sp[1],sp[2],soma_radius)
     soma_str += "2 1 %s %s %s %s 1\n" % (sp[0],sp[1]-soma_radius,sp[2],soma_radius)
     soma_str += "3 1 %s %s %s %s 1\n" % (sp[0],sp[1]+soma_radius,sp[2],soma_radius)
@@ -95,7 +118,7 @@ def write_swc(name,points,prefix,soma_radius) :
         else:
             try:
                 parent_index = _from_point(points[index]['f'],points)
-                #print "parent_index: ", parent_index
+                #print ("parent_index: ", parent_index)
                 if parent_index in index_mapping:
                     converted_index = index_mapping[parent_index]
                     to_write = "%i %i %s %s %s %s %i\n" % \
@@ -106,15 +129,15 @@ def write_swc(name,points,prefix,soma_radius) :
                     index_mapping[index] = new_index
                     new_index = new_index +1                     
                 else:
-                    print "Could not find %s in the converted list..." % (parent_index)
-                    print "Error occured in convertion file to SWC (index:%s, parent=%s)" % (index,parent_index)
-                    print "converte_index: ", converted_index
+                    print ("Could not find %s in the converted list..." % (parent_index))
+                    print ("Error occured in convertion file to SWC (index:%s, parent=%s)" % (index,parent_index))
+                    print ("converte_index: ", converted_index)
                     index_for_later.append(index)
                     #time.sleep(2)           
             except KeyError:
-                print "Error occured in convertion file to SWC (index:%s, parent=%s)" % (index,parent_index)
+                print ("Error occured in convertion file to SWC (index:%s, parent=%s)" % (index,parent_index))
 
-    print "Done, now take care of the leftover indices...[for indices not inserted in order]"
+    print ("Done, now take care of the leftover indices...[for indices not inserted in order]")
     
     for index in sorted(index_for_later):
         to_p = points[index]['t']
@@ -130,7 +153,7 @@ def write_swc(name,points,prefix,soma_radius) :
         else:
             try:
                 parent_index = _from_point(points[index]['f'],points)
-                #print "parent_index: ", parent_index
+                #print ("parent_index: ", parent_index)
                 converted_index = index_mapping[parent_index]
                 to_write = "%i %i %s %s %s %s %i\n" % \
                   (new_index, swc_type,to_p[0],to_p[1], to_p[2],points[index]['r'],converted_index)
@@ -140,7 +163,7 @@ def write_swc(name,points,prefix,soma_radius) :
                 index_mapping[index] = new_index
                 new_index = new_index +1                     
             except KeyError:
-                print "LATER:: Error occured in convertion file to SWC (index:%s, parent=%s)" % (index,parent_index)
+                print ("LATER:: Error occured in convertion file to SWC (index:%s, parent=%s)" % (index,parent_index))
 
 def _from_point(p,points) :
     for index in points:
@@ -148,7 +171,7 @@ def _from_point(p,points) :
             continue
         if points[index]['t'] == p :
             return index
-    print "not found: ", p,' [should not happen]'       
+    print ("not found: ", p,' [should not happen]')
 
 if __name__=="__main__" :
     cfg_file = sys.argv[1]

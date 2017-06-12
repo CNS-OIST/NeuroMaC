@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import zmq
 import sys
 import time
@@ -15,12 +38,12 @@ from segment_distance import dist3D_segment_to_segment
 import inspect
 def _me(bool) :
     if(bool) :
-        print '%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3])
+        (print '%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3]))
     else :
         pass
 
 def print_with_rank(num,message) :
-    print '%s \t%i \t%s' % (inspect.stack()[1][1],num, message)
+    print ('%s \t%i \t%s' % (inspect.stack()[1][1],num, message))
 
 """
 auxilliary functions for the set operations needed for the \
@@ -69,7 +92,7 @@ class Subvolume_Agent(object) :
                     allowed_self_dist[section] = self.parser.getfloat(\
                                                       section,\
                                                       "minimum_self_distance")
-                    print "allowed_s_d[%s]=%f" % (section,allowed_self_dist[section])
+                    print ("allowed_s_d[%s]=%f" % (section,allowed_self_dist[section]))
         self.allowed_self_dist = allowed_self_dist
                 
         if self.parser.has_option("system","recursion_limit"):
@@ -155,9 +178,9 @@ class Subvolume_Agent(object) :
                     self.distal_constellation = \
                         self._merge_constellations(self.distal_constellation,\
                                                    all_summarized_constellations[num])
-                    #print "all_s_constel: ", all_summariz_constellations[num]
+                    #print ("all_s_constel: ", all_summariz_constellations[num])
 
-        # print "distal_constel: ", self.distal_constellation
+        # print ("distal_constel: ", self.distal_constellation)
                                                    
         # deal with the special case of having only one SV
         if len(self.neighbors) == 0 :
@@ -206,7 +229,7 @@ class Subvolume_Agent(object) :
 
         # 2014-08-06       
         self.neighbor_constellation = self._merge_constellations(self.neighbor_constellation,temp_con)
-        #print "received temp_con: ", temp_con
+        #print ("received temp_con: ", temp_con)
 
         self._constellation_responses = self._constellation_responses +1
 
@@ -264,7 +287,7 @@ class Subvolume_Agent(object) :
 
             # 2014-08-06
             if entity_name in self.dynamic_constellation :
-                print "Help! I am overwriting something"
+                print ("Help! I am overwriting something")
                 time.sleep(10)
             self.dynamic_constellation[entity_name] = set()
             self.dynamic_constellation[entity_name].add(new_front)#append((soma_xyz,radius))
@@ -304,7 +327,7 @@ class Subvolume_Agent(object) :
                 # front is trying to update the environment
                 # store the update information, likely in my_constellation?
                 update_info = ret[1]
-                # print "update_info: ", update_info
+                # print ("update_info: ", update_info)
                 entity_name = update_info.keys()[0]
                 entity_front = update_info[entity_name] # 2014-08-11
                 
@@ -329,10 +352,10 @@ class Subvolume_Agent(object) :
             elif isinstance(ret,list) or ret == None:
                 pass # front is only extending
             else :
-                print "ret: ", ret
-                print "type: ",type(ret)
-                print "extend_front must return either list \
-                (for continuation, branch or termination or tuple (list and dict)"
+                print ("ret: ", ret)
+                print ("type: ",type(ret))
+                print ("extend_front must return either list \
+                (for continuation, branch or termination or tuple (list and dict)")
                 sys.exit(0)
             if ret == None :
                 # that's the end of this front
@@ -354,7 +377,7 @@ class Subvolume_Agent(object) :
                             self.dynamic_constellation[f.entity_name].add(f)
                             pos_only_constellation[f.entity_name].append(f.xyz)
                         else:
-                            print "NOT VALID TO ADD THIS POINT"
+                            print ("NOT VALID TO ADD THIS POINT")
                             pass
                     else :
                         # print_with_rank(self.num,"front(%s) not in this SV (%s)" % (str(f.xyz),str(self.boundary)))
@@ -453,8 +476,8 @@ class Subvolume_Agent(object) :
             #                (mc_no_keys,mc_total_l))
             print_with_rank(self.num,"static keys: "+ str(self.static_constellation.keys()))
         except Exception, e:
-            print "CANNOT DETERMINE CONSTELLATION SIZE"
-            print e
+            print ("CANNOT DETERMINE CONSTELLATION SIZE")
+            print (e)
             time.sleep(20)
          
     def _is_front_valid(self,front,check_synapses=False):
@@ -462,7 +485,7 @@ class Subvolume_Agent(object) :
         syn_locs = []
         # check against all developing processes
         for entity_name in self.dynamic_constellation:
-            #print "checking validity of entity_name:", entity_name
+            #print ("checking validity of entity_name:", entity_name)
             if not entity_name == front.entity_name:
                 for o_front in self.dynamic_constellation[entity_name]:
                     if front.parent == None or o_front.parent == None:
@@ -472,10 +495,10 @@ class Subvolume_Agent(object) :
 
                     if check_synapses:
                         if D < (front.radius + o_front.radius) :
-                            print "radii too close"
+                            print ("radii too close")
                             ret = False
                         elif D < (front.radius + o_front.radius + self.parser.getfloat("system","synapse_distance")):
-                            #print "synapse!!!"
+                            #print ("synapse!!!")
                             ##### TODO TODO TODO TODO ####
                             # of course, additional check required to have "axon -> dendrite" instead of "all -> all"
                             # or even more fancy pancy if you can specify which pre synapse entity_name can synapse to which post entity_name
@@ -486,7 +509,7 @@ class Subvolume_Agent(object) :
                             syn_locs.append(pre_post)
                     else:
                         if D < (front.radius + o_front.radius) :
-                            print "radii too close [w/o syns]: D=%f (fr=%f, or=%f)" % (D,front.radius,o_front.radius)
+                            print ("radii too close [w/o syns]: D=%f (fr=%f, or=%f)" % (D,front.radius,o_front.radius))
                             return False,[]
 
             else:
@@ -506,17 +529,17 @@ class Subvolume_Agent(object) :
                     D = np.sqrt(np.sum((front.xyz-o_front.xyz)**2))
                     if np.all(o_front.xyz == front.soma_pos):
                         # comparing to the soma
-                        #print "checking against soma"
+                        #print ("checking against soma")
                         if front.path_length < o_front.radius*2:
                             pass
                         else:
                             if D < o_front.radius:
-                                print "self colliding with soma"
+                                print ("self colliding with soma")
                                 return False,[]
                             
                     # elif D < o_front.radius:
                     elif D <= min_distance: 
-                        print "self refused on radius (D=%f)" % D
+                        print ("self refused on radius (D=%f)" % D)
                         return False,[]
         return ret, syn_locs        
 
@@ -542,7 +565,7 @@ class Subvolume_Agent(object) :
             temp2 = []
             for t in temp:
                 temp2.append((t,0))
-            #print "summary for key=",key,'=>',temp2
+            #print ("summary for key=",key,'=>',temp2)
             sum_front = Front(key,"",temp2[0][0],0,0,0)
             summarized_constellation[key] = set([sum_front])
         #print_with_rank(self.num,"summarized: "+str(summarized_constellation))

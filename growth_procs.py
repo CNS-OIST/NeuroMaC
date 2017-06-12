@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import time,copy
 import numpy as np
 from front import Front
@@ -97,13 +120,13 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
        List contains 3D positions
     """
     entity_name = front.entity_name
-    print "front.entity_name: ", entity_name
+    print ("front.entity_name: ", entity_name)
     entities = []
     for key in constellation.keys() :
         if key.startswith(entity_name):
             entities = entities + constellation[key]
     entities = map(tuple,entities)
-    #print "entities: ", entities
+    #print ("entities: ", entities)
 
     """Now prune the list of entities. Remove:
     1. ancestors less than <ancestry_limit> micron away
@@ -114,7 +137,7 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
     len_before = len(entities)
     # to_be_removed = []
     # to_be_removed.append(front.xyz) # no cue from yourself
-    #print "self as tuple:", tuple(front.xyz)
+    #print ("self as tuple:", tuple(front.xyz))
 
     try:
         entities.remove(tuple(front.xyz))
@@ -129,10 +152,10 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
             c_front= parent
             entities.remove(tuple(parent.xyz))
     except Exception as error:
-        print "growth_procs.get_eigen_entity: caught unknown removal: ", str(error)
+        print ("growth_procs.get_eigen_entity: caught unknown removal: ", str(error))
     
     len_after = len(entities)
-    #print "len(entities), before=%i, after=%i" % (len_before,len_after)
+    #print ("len(entities), before=%i, after=%i" % (len_before,len_after))
     entities = map(np.array,entities)
     return entities
 
@@ -167,7 +190,7 @@ def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_orde
     new_front.parent = front
     new_front.xyz = new_pos
     if not radius_factor == None:
-        #print "front, radius_factor, front.radius:",radius_factor," * radius:",front.radius," = ", (front.radius*radius_factor)
+        #print ("front, radius_factor, front.radius:",radius_factor," * radius:",front.radius," = ", (front.radius*radius_factor))
         #time.sleep(1)
         new_front.radius = front.radius*radius_factor
     if not set_radius == None:
@@ -273,12 +296,12 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
         decay = compute_exp_decay_factor(strength,\
                                          decay_factor,\
                                          L)
-        # print "self_rep, L=%.2f, decay=%.2f " % (L,decay)
+        # print ("self_rep, L=%.2f, decay=%.2f " % (L,decay))
         nearest_vec = (nearest_vec/ L * decay)
         L = np.sqrt(sum((nearest_vec)**2))
-        # print "self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff)
+        # print ("self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff))
         if L < cutoff:
-            #print "return [0,0,0]"
+            #print ("return [0,0,0]")
             return np.array([0,0,0])
         else:
             return nearest_vec
@@ -290,10 +313,10 @@ def gradient_to(front,list_of_others,strength,decay_factor,what="average",cutoff
             decay = compute_exp_decay_factor(strength,\
                                              decay_factor,\
                                              L)
-            # print "self_rep, L=%.2f, decay=%.2f " % (L,decay)
+            # print ("self_rep, L=%.2f, decay=%.2f " % (L,decay))
             nearest_vec = (nearest_vec/ L * decay)
             L = np.sqrt(sum((nearest_vec)**2))
-            # print "self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff)
+            # print ("self_rep, L=%.2f, decay=%.2f, cutoff=%.2f" % (L,decay,cutoff))
             if L < cutoff:
                 pass # only gradients exceeding thr cutoff will be returned
             else:
@@ -315,12 +338,12 @@ def compute_soma_rep_vec(front,strength=1.0,decay=1.0) :
     """
     if np.all(front.soma_pos == front.xyz) :
         vec_from_soma = np.array([0.000001,0.0,0.0])
-        print "################################### soma == front"
+        print ("################################### soma == front")
         import time
         time.sleep(2)
     else :
         vec_from_soma = front.xyz - front.soma_pos # move to origin (of coordinate system)
     L = np.sqrt(sum(vec_from_soma**2))
     decay = compute_exp_decay_factor(strength,decay,L)
-    print "soma_pos=%s,f.xyz: %s,L=%.2f,soma decay=%.2f " % (str(front.soma_pos),str(front.xyz),L,decay)
+    print ("soma_pos=%s,f.xyz: %s,L=%.2f,soma decay=%.2f " % (str(front.soma_pos),str(front.xyz),L,decay))
     return (vec_from_soma)/ L * decay

@@ -1,3 +1,26 @@
+####################################################################################
+#
+#    NeuroMaC: Neuronal Morphologies & Circuits
+#    Copyright (C) 2013-2017 Okinawa Institute of Science and Technology Graduate
+#    University, Japan.
+#
+#    See the file AUTHORS for details.
+#    This file is part of NeuroMaC.
+#
+#    NeuroMaC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#
+#    NeuroMaC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################
+
 import sys
 import random
 import sqlite3
@@ -23,7 +46,7 @@ if __name__ == "__main__" :
     db_name = sys.argv[2]
     parser = SafeConfigParser()
     parser.read(cfg_file)
-    print "db_name: %s " % (db_name)
+    print ("db_name: %s " % (db_name))
 
     FFMpegWriter = manimation.writers['ffmpeg']
     metadata = dict(title='Movie Test', artist='Matplotlib',
@@ -49,7 +72,7 @@ if __name__ == "__main__" :
         movie_name = db_name.split("/")[-1].split(".")[0]+".mp4"
     else: 
         movie_name = db_name.split(".")[0]+".mp4"
-    print "movie_name: ", movie_name
+    print ("movie_name: ", movie_name)
 
     colors= ['r','g','b','c','m','k']
     markers = ["."]#,"x","o"]#,"o","s","^","p","*"]
@@ -62,7 +85,7 @@ if __name__ == "__main__" :
     rets = cursor.fetchall()
     c = 0
     for entity in rets :
-        print "entity: %s with color %s" % (str(entity[0]),colors[c%len(colors)])
+        print ("entity: %s with color %s" % (str(entity[0]),colors[c%len(colors)]))
         c_mapping[str(entity[0])] = colors[c%len(colors)]
         c = c + 1
 
@@ -70,7 +93,7 @@ if __name__ == "__main__" :
     rets = cursor.fetchall()
     c = 0
     for entity in rets :
-        print "proc: %s with marker %s" % (str(entity[0]),markers[c%len(markers)])
+        print ("proc: %s with marker %s" % (str(entity[0]),markers[c%len(markers)]))
         m_mapping[str(entity[0])] = markers[c%len(markers)]
         c = c + 1        
     
@@ -82,7 +105,7 @@ if __name__ == "__main__" :
         for row in rets:
             counter = counter +1
             if counter % 20 == 0:
-                print 'counter >',counter,'<'
+                print ('counter >',counter,'<')
             swc_id,name,swc_type,x1,y1,z1,x2,y2,z2,radius,proc = row
             plt.plot([x1,x2],[y1,y2],zs=[z1,z2],color=c_mapping[str(name)])#,marker=m_mapping[str(proc)])
             writer.grab_frame()
