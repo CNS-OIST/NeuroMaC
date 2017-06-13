@@ -23,6 +23,8 @@
 
 import timeit
 import sys,time
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 import random
 import sqlite3
 import copy
@@ -30,10 +32,10 @@ import numpy
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from ConfigParser import SafeConfigParser # For use with Python 2.7
+import configparser
 
 def collect_swc_data(db_name,cfg_file) :
-    parser = SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.read(cfg_file)
     
     conn = sqlite3.connect(db_name)
@@ -62,10 +64,10 @@ def collect_swc_data(db_name,cfg_file) :
         points = {}
         is_soma = True
         
-        print ('processing: ', name)
+        print ('generate_SWC_data.py processing: ', name)
         for entity in rets :
             contents = {}
-            index = entity[0]
+            #index = str(entity[0])
             if is_soma:
                 points['soma'] = (entity[3],entity[4],entity[5])
                 soma_radius = parser.getint(entity[1].split("__")[0],"soma_radius")
@@ -77,8 +79,14 @@ def collect_swc_data(db_name,cfg_file) :
             contents['t'] = (entity[6],entity[7],entity[8])
             contents['r'] = entity[9]
             points[entity[0]] =contents
+
+#for keys,values in points.items():
+#print(keys)
+#print(values)
+
         write_swc(name,points,prefix,soma_radius)
         all_points[name] = points
+
 
 def write_swc(name,points,prefix,soma_radius) :
     if len(prefix) > 0:
@@ -96,6 +104,7 @@ def write_swc(name,points,prefix,soma_radius) :
     soma_str += "3 1 %s %s %s %s 1\n" % (sp[0],sp[1]+soma_radius,sp[2],soma_radius)
     writer.write(soma_str)
     writer.flush()
+    del points['soma'] # otherwise error raised on sorted
     
     index_mapping = {}
     new_index = 4
@@ -108,7 +117,7 @@ def write_swc(name,points,prefix,soma_radius) :
         to_p = points[index]['t']
         f_p = points[index]['f']
         swc_type = points[index]['swc_type']
-        if points[index]['f'] == points['soma']:
+        if points[index]['f'] == sp:
             # stems rooted at the soma
             to_write = "%i %i %s %s %s %s %i\n" % (new_index,swc_type, to_p[0],to_p[1], to_p[2],points[index]['r'],1)
             writer.write(to_write)
@@ -126,7 +135,7 @@ def write_swc(name,points,prefix,soma_radius) :
                     index_mapping[index] = new_index
                     writer.write(to_write)
                     writer.flush()
-                    index_mapping[index] = new_index
+                    #index_mapping[index] = new_index
                     new_index = new_index +1                     
                 else:
                     print ("Could not find %s in the converted list..." % (parent_index))
@@ -143,7 +152,7 @@ def write_swc(name,points,prefix,soma_radius) :
         to_p = points[index]['t']
         f_p = points[index]['f']
         swc_type = points[index]['swc_type']
-        if points[index]['f'] == points['soma']:
+        if points[index]['f'] == sp:
             # stems rooted at the soma
             to_write = "%i %i %s %s %s %s %i\n" % (new_index,swc_type, to_p[0],to_p[1], to_p[2],points[index]['r'],1)
             writer.write(to_write)
