@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # uncomment next line for interactive checking of generated output
-PYTHON="ipython2 --pylab -i"
+PYTHON="ipython --pylab -i"
 # non-interactive shell. Check results afterwards
-PYTHON="python2.7"
+PYTHON="python"
 
 
 # Attraction demo: two structures are grown

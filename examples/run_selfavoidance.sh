@@ -3,7 +3,7 @@
 # uncomment next line for interactive checking of generated output
 PYTHON="ipython2 --pylab -i"
 # non-interactive shell. Check results afterwards
-PYTHON="python2.7"
+PYTHON="python"
 
 # Self-avoidance example
 time PYTHONPATH=self_avoidance/:$PYTHONPATH python ../Admin.py 1 self_avoidance/selfavoidance.cfg 
