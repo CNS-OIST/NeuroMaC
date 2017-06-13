@@ -26,8 +26,8 @@ import sys
 import time
 import copy
 import sqlite3
-import cPickle as pickle
-from ConfigParser import SafeConfigParser # For use with Python 2.7
+import _pickle as pickle
+import configparser
 import numpy as np
 
 from front import Front
@@ -36,14 +36,23 @@ from segment_distance import dist3D_segment_to_segment
 #from memory_profiler import profile
 
 import inspect
+
+verbose = 0
+
 def _me(bool) :
     if(bool) :
-        (print '%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3]))
+        print ('%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3]))
     else :
         pass
 
 def print_with_rank(num,message) :
-    print ('%s \t%i \t%s' % (inspect.stack()[1][1],num, message))
+    """
+    Print calling function, sv number and message
+    """
+    if verbose:
+        func = inspect.stack()[1][1]
+        tail = func.split('/')[-1]
+        print ('%s \t%i \t%s' % (tail, num, message))
 
 """
 auxilliary functions for the set operations needed for the \
@@ -57,9 +66,11 @@ def decode_tuple(p):
         
 class Subvolume_Agent(object) :
     def __init__(self,num,cfg_file="test_config.cfg") :
+        global verbose
+        
         self.num=num
         self.active_fronts = []
-        print_with_rank(num, "Online!")
+        print_with_rank (num, "online!")
 
         # static: boundaries
         self.static_constellation = {}
@@ -72,10 +83,12 @@ class Subvolume_Agent(object) :
         # substance definitions: both static and dynamic (for now, only dynamic supported)
         self.substances_constellation={}
         
-        self.parser = SafeConfigParser()
+        self.parser = configparser.ConfigParser()
         self.parser.read(cfg_file)
         if self.parser.has_option("system","recursion_limit"):
             sys.setrecursionlimit(self.parser.getint("system","recursion_limit"))
+        if self.parser.has_option("system","verbose"):
+            verbose = self.parser.getint("system","verbose")
 
         """ check the minimum distance between fronts of each entity_type.
             Used to test the validity of front. If not set, the default
@@ -108,15 +121,15 @@ class Subvolume_Agent(object) :
         # to communicate through the proxy
         self.psub = self.context.socket(zmq.SUB)
         self.psub.connect("tcp://localhost:%s" % self.parser.getint("system","proxy_pub_port") )
-        self.psub.setsockopt(zmq.SUBSCRIBE, "All")
-        self.psub.setsockopt(zmq.SUBSCRIBE, "%06d"%self.num)
+        self.psub.setsockopt_string(zmq.SUBSCRIBE, "All")
+        self.psub.setsockopt_string(zmq.SUBSCRIBE, "%06d"%self.num)
         self.ppub = self.context.socket(zmq.PUB)
         self.ppub.connect("tcp://localhost:%s" % self.parser.getint("system","proxy_sub_port") )
 
         # register/sync with Admin
         self.socket_push = self.context.socket(zmq.PUSH)
         self.socket_push.connect("tcp://127.0.0.1:%s" % self.parser.getint("system","pull_port"))
-        self.socket_push.send("SV_%06d online"%self.num)
+        self.socket_push.send_string("SV_%06d online"%self.num)
 
     def main_loop(self) :
         running = True
@@ -132,7 +145,7 @@ class Subvolume_Agent(object) :
             elif message == "Update" :
                 print_with_rank(self.num," update")
             elif message[0] == "Init_SV" :
-                #print_with_rank(self.num,"Init_SV received")
+                print_with_rank(self.num,"Init_SV received")
                 self._process_init_sv(message)
             elif message[0] == "Initialize_GEs" :
                 self._process_initialize_ges(message)
@@ -192,7 +205,7 @@ class Subvolume_Agent(object) :
     def _ask_neighboring_constellations(self):
         for dest in self.neighbors :
             message = ("Request_constellation",self.num)
-            self.ppub.send_multipart(["%06d"%dest,pickle.dumps(message)])
+            self.ppub.send_multipart([b"%06d"%dest,pickle.dumps(message)])
 
     def _process_request_constellation(self,message):
         ret_dest = message[1]
@@ -211,7 +224,7 @@ class Subvolume_Agent(object) :
         developing front to decide what is "near" and what is "distal"
         """
         ret_message = ("Reply_constellation",self.dynamic_constellation)
-        self.ppub.send_multipart(["%06d"%ret_dest,pickle.dumps(ret_message)])
+        self.ppub.send_multipart([b"%06d"%ret_dest,pickle.dumps(ret_message)])
 
     def _process_reply_constellation(self,message):
         # merge received constellation in an expanded one
@@ -383,7 +396,7 @@ class Subvolume_Agent(object) :
                         # print_with_rank(self.num,"front(%s) not in this SV (%s)" % (str(f.xyz),str(self.boundary)))
                         # make message and send to admin, admin then distributes to correct subvolume
                         message=("Migrate_Front",f,front) # send new front and parent
-                        self.ppub.send_multipart(["Admin",pickle.dumps(message)])
+                        self.ppub.send_multipart([b"Admin",pickle.dumps(message)])
                 # self._temp_to_db(front,ret)
                 changes.append((front,ret))
         self.active_fronts = new_fronts
@@ -404,7 +417,7 @@ class Subvolume_Agent(object) :
         my_summarized_constellation = self._summarize_constellation(core_pos_only_constellation)
         
         msg = ("Update_OK","%06d"%self.num,changes,all_synapse_locs,my_summarized_constellation)
-        self.ppub.send_multipart(["Admin",pickle.dumps(msg)])
+        self.ppub.send_multipart([b"Admin",pickle.dumps(msg)])
 
         if debug_mem:
             self._gather_constellation_size(merged_constellation)
@@ -475,9 +488,9 @@ class Subvolume_Agent(object) :
             # print_with_rank(self.num, "DEBUG: TOTAL MC K=: %i, L: %i" % \
             #                (mc_no_keys,mc_total_l))
             print_with_rank(self.num,"static keys: "+ str(self.static_constellation.keys()))
-        except Exception, e:
+        except Exception as err:
             print ("CANNOT DETERMINE CONSTELLATION SIZE")
-            print (e)
+            print (err)
             time.sleep(20)
          
     def _is_front_valid(self,front,check_synapses=False):
@@ -591,7 +604,7 @@ class Subvolume_Agent(object) :
 
         # in case of new synapses, notify the Admin agent
         msg = ("Extra_synapses","%06d"%self.num,syn_locs)
-        self.ppub.send_multipart(["Admin",pickle.dumps(msg)])        
+        self.ppub.send_multipart([b"Admin",pickle.dumps(msg)])
         
     def _temp_to_db(self,front,c_fronts) :
         pos = front.xyz
