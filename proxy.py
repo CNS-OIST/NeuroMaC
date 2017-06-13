@@ -44,8 +44,8 @@ def main():
         backend = context.socket(zmq.PUB)
         backend.bind("tcp://*:5560")
         zmq.device(zmq.FORWARDER, frontend, backend)
-    except Exception, e:
-        print (e)
+    except Exception as err:
+        print (err)
         print ("bringing down zmq device")
     finally:
         pass
