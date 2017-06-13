@@ -214,7 +214,7 @@ def normalize_length(vec,norm_L) :
     Returns:
     new_vec : np.array
     """
-    if vec == None:
+    if vec is None:
         return [0,0,0]
     return vec / np.sqrt(np.sum((vec)**2)) * norm_L
 
