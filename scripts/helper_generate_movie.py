@@ -22,13 +22,14 @@
 #################################################################################
 
 import sys
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 import random
 import sqlite3
 import copy
 import numpy as np
 import scipy
-
-from ConfigParser import SafeConfigParser # For use with Python 2.7
+import configparser
 
 import matplotlib
 matplotlib.use("Agg")
@@ -44,7 +45,7 @@ e_start = 10.0
 if __name__ == "__main__" :
     cfg_file = sys.argv[1]
     db_name = sys.argv[2]
-    parser = SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.read(cfg_file)
     print ("db_name: %s " % (db_name))
 
