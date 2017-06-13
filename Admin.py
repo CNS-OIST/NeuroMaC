@@ -27,26 +27,35 @@ max subvolumes=999999 (SV addresses are: %06d)
 
 import zmq
 import sys
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 import os
 import time
 import sqlite3
-from ConfigParser import SafeConfigParser # For use with Python 2.7
+import configparser
 import numpy as np
-import cPickle as pickle
-
+import _pickle as pickle
 from front import Front
-
 from multiprocessing import Process
-
 import inspect
+
+verbose = 0
+
 def _me(bool) :
     if(bool) :
-        print ('%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3]))
+        if verbose:
+            print ('%s \t Call -> ::%s' % (inspect.stack()[1][1], inspect.stack()[1][3]))
     else :
         pass
 
 def print_with_rank(message) :
-    print ('%s \t \t%s' % (inspect.stack()[1][1], message))
+    """
+    Print calling function and message
+    """
+    if verbose:
+        func = inspect.stack()[1][1]
+        tail = func.split('/')[-1]
+        print ('%s \t \t%s' % (tail, message))
 
 class Admin_Agent(object) :
     """
@@ -55,17 +64,21 @@ class Admin_Agent(object) :
     here and distributed to the Subvolumes corresponding to the location
     of the growth cones.
 
-    Modelled as conceptually close to biology but great in load balancing...
+    Modeled as conceptually close to biology but great in load balancing...
     """
     def __init__(self,total_processors,cfg_file="test_config.cfg") :
+        global verbose
+        
         self.cfg_file = cfg_file
-        self.parser = SafeConfigParser()
+        self.parser = configparser.ConfigParser()
         self.parser.read(cfg_file)
         np.random.seed(self.parser.getint("system","seed"))
         if self.parser.has_option("system","recursion_limit"):
             sys.setrecursionlimit(self.parser.getint("system","recursion_limit"))
+        if self.parser.has_option("system","verbose"):
+            verbose = self.parser.getint("system","verbose")
         self.substrate={}
-        # a few variable should be global
+        # a few variables should be global
         self.total_processors = total_processors # until I find a better way
         self.processor_ids = range(1,self.total_processors) # start from 1: skip the Admin
         self.summarized_constellations = {} # store summarized constellations based on their self.num / proc id
@@ -100,7 +113,7 @@ class Admin_Agent(object) :
         # SETUP PROXY: to communicate through a proxy; all-to-all
         self.psub = self.context.socket(zmq.SUB)
         self.psub.connect("tcp://localhost:%s" % self.parser.getint("system","proxy_pub_port")  )
-        self.psub.setsockopt(zmq.SUBSCRIBE, "Admin")        
+        self.psub.setsockopt_string(zmq.SUBSCRIBE, "Admin")
         self.ppub = self.context.socket(zmq.PUB)
         self.ppub.connect("tcp://localhost:%s" % self.parser.getint("system","proxy_sub_port"))        
 
@@ -112,7 +125,7 @@ class Admin_Agent(object) :
             msg = self.socket_pull.recv()
             print_with_rank(str(msg))
             registered = registered + 1
-        print ("all Subvolumes registered. Proceed!")
+        print_with_rank ("all Subvolumes registered. Proceed!")
 
     def _setup_DBs(self) :
         self.db_file_name = self.parser.get("system","out_db")
@@ -167,7 +180,7 @@ class Admin_Agent(object) :
         b0 = np.array(boundary[0])
         b1 = np.array(boundary[1])
         for entity in self.substrate :
-            print ("checking entity: ", entity, ", boundary: ", boundary)
+            print_with_rank ("checking entity: ", entity, ", boundary: ", boundary)
 
             # 2014-08-08, make all internals sets of fronts.. bit redundant memory wise, but easy for administration
             sub_substrate[entity] = set()
@@ -186,14 +199,14 @@ class Admin_Agent(object) :
         for name,value in self.parser.items("substrate"):
             if name.startswith("virtual"):
                 virtual_name = name.split("_")[1]
-                print  ("Found virtual: ",virtual_name)
+                print_with_rank  ("Found virtual: ",virtual_name)
                 virtual_substrate.update({virtual_name:eval(self.parser.get("substrate",name))})
 
         if virtual_substrate == {}:
-            print ("No virtual substrates found")
+            print_with_rank ("No virtual substrates found")
             #time.sleep(5)
         else:
-            print ("virtual_substrate:\n",virtual_substrate)
+            print_with_rank ("virtual_substrate:\n",virtual_substrate)
             #time.sleep(5)
         return virtual_substrate
                                             
@@ -252,9 +265,9 @@ class Admin_Agent(object) :
             """
             sub_substrate = self._get_sub_substrate(boundary)
 
-            print_with_rank("sending Init_SV to %06d"%dest )
+            print_with_rank("sending Init_SV to %06d"%dest)
             message = ("Init_SV",boundary,neighbors,sub_substrate,virtual_substrate)
-            self.ppub.send_multipart(["%06d"%dest,pickle.dumps(message)])
+            self.ppub.send_multipart([b"%06d"%dest,pickle.dumps(message)])
             # time.sleep(2)
         return 1 # positive: all is well
 
@@ -306,7 +319,7 @@ class Admin_Agent(object) :
             entries = ship_entity_to_proc[proc]
             message=("Initialize_GEs",entries)
             # comm.send(message,dest=proc,tag=2)
-            self.ppub.send_multipart(["%06d"%proc,pickle.dumps(message)])
+            self.ppub.send_multipart([b"%06d"%proc,pickle.dumps(message)])
             print_with_rank("to %i: %s" % (proc,str(message)))
         return 1 # positive: all is well
         
@@ -322,7 +335,7 @@ class Admin_Agent(object) :
         for i in range(self.parser.getint("system","no_cycles")) :
             for dest in self.processor_ids :
                 message = ("Update",i,self.summarized_constellations)
-                self.ppub.send_multipart(["%06d"%dest,pickle.dumps(message)])
+                self.ppub.send_multipart([b"%06d"%dest,pickle.dumps(message)])
             responses = 0
             while responses < len(self.processor_ids) :
                 # socks = dict(self.poller.poll())
@@ -412,7 +425,7 @@ class Admin_Agent(object) :
             return
         message = ("Add_Front",new_front)
         #comm.send(message,dest=new_dest,tag=2)
-        self.ppub.send_multipart(["%06d"%new_dest,pickle.dumps(message)]) 
+        self.ppub.send_multipart([b"%06d"%new_dest,pickle.dumps(message)])
 
     def _which_volume_contains_position(self,pos) :
         for key in self.space_division :
@@ -430,13 +443,16 @@ class Admin_Agent(object) :
         """ Shut down the system. End all threads and all MPI instances
         """
         _me(True)
-        print_with_rank("pickle_msg:"+ pickle.dumps("Done") )
-        self.ppub.send_multipart(["All",pickle.dumps("Done")])
+        print_with_rank("pickle_msg: Done")
+        self.ppub.send_multipart([b"All",pickle.dumps("Done")])
         self.context.destroy()
 
 def start_proxy(cfg_file) :
-    print ("starting proxy")
-    parser = SafeConfigParser()
+    """
+    Proxy is a 0MQ message queuing broker
+    """
+    # print ("starting proxy")
+    parser = configparser.ConfigParser()
     parser.read(cfg_file)
     try:
         print_with_rank("PROXY really starting <-----")
@@ -444,7 +460,8 @@ def start_proxy(cfg_file) :
         # Socket facing clients
         frontend = context.socket(zmq.SUB)
         frontend.bind("tcp://*:%i" % parser.getint("system","proxy_sub_port"))
-        frontend.setsockopt(zmq.SUBSCRIBE, "")
+        #frontend.setsockopt(zmq.SUBSCRIBE, "")
+        frontend.setsockopt_string(zmq.SUBSCRIBE, "")
         print_with_rank("PROXY subscribed <-----")
         # Socket facing services
         backend = context.socket(zmq.PUB)
@@ -452,8 +469,8 @@ def start_proxy(cfg_file) :
         zmq.device(zmq.FORWARDER, frontend, backend)
         print_with_rank("PROXY forwarded <-----")
         print_with_rank("PROXY up and running <-----")
-    except Exception, e:
-        print (e)
+    except Exception as err:
+        print (err)
         print_with_rank("PROXY encountered an error. PROXY down")
     finally:
         print_with_rank("PROXY finally down")
@@ -464,14 +481,14 @@ def start_proxy(cfg_file) :
 if __name__=="__main__" :
     """
     Start a simulation. Initialize the proxy for message routing,\
-    the admin doing the house hold tasks and thethe Subvolumes \
+    the admin doing the house hold tasks and the Subvolumes \
      holding the developing Fronts
     """
-    no = int(sys.argv[1])
-    cfg_file = sys.argv[2]
+    no = int(sys.argv[1]) # number of subvolumes used
+    cfg_file = sys.argv[2] # config file name
     
-    proxy = Process(target=start_proxy,args=(cfg_file,))
-    proxy.start()
+    proxy = Process(target=start_proxy,args=(cfg_file,)) # future admin process
+    proxy.start() # set up communication
     time.sleep(1) # can I do this in a smarter way? What for a signal that the proxy is ready?
     
     import Subvolume
@@ -480,14 +497,17 @@ if __name__=="__main__" :
         p = Process(target=Subvolume.start,args=(i,cfg_file))
         svs.append(p)
         svs[-1].start()
-    print ("Admin going to start with cfg_file: ", cfg_file)
-    admin = Admin_Agent(no+1,cfg_file)
-    print ("Admin is ready")
+    print ("NeuroMaC admin going to start with cfg_file: ", cfg_file)
+    admin = Admin_Agent(no+1,cfg_file) # add admin node to number of subvolume nodes
+    if verbose:
+        print ("Admin is ready")
     time.sleep(0.5)
-    print ("Switching off proxy")
+    if verbose:
+        print ("Switching off proxy")
     proxy.terminate()
-    print ("Proxy switched off")
+    if verbose:
+        print ("Proxy switched off")
     for sv in svs :
         sv.terminate()
-    print ("Admin done. Terminated.")
+    print ("NeuroMaC admin done. Terminated.")
     sys.exit(0) # don't understand why it doesn't clean properly...
