@@ -23,6 +23,8 @@
 
 import timeit
 import sys,time
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 import random
 import sqlite3
 import copy
@@ -30,7 +32,7 @@ import numpy
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from ConfigParser import SafeConfigParser # For use with Python 2.7
+import configparser
 
 timer = time.time
 
@@ -41,7 +43,7 @@ e_start = 10.0
 def plot_as_wires(cfg_file,db_name,syn_db) :    
     # cfg_file = sys.argv[1]
     # db_name = sys.argv[2]
-    parser = SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.read(cfg_file)
     colors= ['r','g','b','c','m','k']
     markers = [".","o","s","^","p","*"]
