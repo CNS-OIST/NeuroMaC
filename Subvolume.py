@@ -390,7 +390,8 @@ class Subvolume_Agent(object) :
                             self.dynamic_constellation[f.entity_name].add(f)
                             pos_only_constellation[f.entity_name].append(f.xyz)
                         else:
-                            print ("NOT VALID TO ADD THIS POINT")
+                            if verbose:
+                                print ("NOT VALID TO ADD THIS POINT")
                             pass
                     else :
                         # print_with_rank(self.num,"front(%s) not in this SV (%s)" % (str(f.xyz),str(self.boundary)))
@@ -508,7 +509,8 @@ class Subvolume_Agent(object) :
 
                     if check_synapses:
                         if D < (front.radius + o_front.radius) :
-                            print ("radii too close")
+                            if verbose:
+                                print ("radii too close")
                             ret = False
                         elif D < (front.radius + o_front.radius + self.parser.getfloat("system","synapse_distance")):
                             #print ("synapse!!!")
@@ -552,7 +554,8 @@ class Subvolume_Agent(object) :
                             
                     # elif D < o_front.radius:
                     elif D <= min_distance: 
-                        print ("self refused on radius (D=%f)" % D)
+                        if verbose:
+                            print ("self refused on radius (D=%f)" % D)
                         return False,[]
         return ret, syn_locs        
 
