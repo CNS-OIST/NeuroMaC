@@ -35,10 +35,10 @@ class Front(object) :
     - A Front is a phenomenological growth cone that contains a \
        set of growth rules.
 
-    Each Front its own set of rules expressed in a Python file \
-    that listed in the algo_name variable. Initially, a \
+    Each Front has its own set of rules expressed in a Python file \
+    that is listed in the algo_name variable. Initially, a \
     neuronal structure consists of one Front but later, when a structure \
-    develops by simultaneous expanding of multiple front, each front \
+    develops by simultaneous expanding of multiple fronts, each front \
     can contain different growth-rules.
 
     .. warning:: This code is not to be changed and is directly called \
@@ -74,7 +74,7 @@ class Front(object) :
         #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.order = order
         #:  SWC-type as define in Cannon et al 1998
-        self.swc_type = 7 # SWC-type field
+        self.swc_type = 7 # SWC-type field (custom value)
         self.soma_pos =None
         self.parent = None
 
