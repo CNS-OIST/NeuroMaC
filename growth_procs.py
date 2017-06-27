@@ -25,6 +25,8 @@ import time,copy
 import numpy as np
 from front import Front
 
+verbose = 0
+
 compute_exp_decay_factor = lambda i,d,x : i*np.exp(-d*x)
 
 def unit_sample_on_sphere() :
@@ -120,12 +122,13 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
        List contains 3D positions
     """
     entity_name = front.entity_name
-    print ("front.entity_name: ", entity_name)
+    if verbose :
+        print ("front.entity_name: ", entity_name)
     entities = []
     for key in constellation.keys() :
         if key.startswith(entity_name):
             entities = entities + constellation[key]
-    entities = map(tuple,entities)
+    entities = list(map(tuple,entities))
     #print ("entities: ", entities)
 
     """Now prune the list of entities. Remove:
@@ -155,8 +158,9 @@ def get_eigen_entity(front,constellation,ancestry_limit=25,common_ancestry_limit
         print ("growth_procs.get_eigen_entity: caught unknown removal: ", str(error))
     
     len_after = len(entities)
-    #print ("len(entities), before=%i, after=%i" % (len_before,len_after))
-    entities = map(np.array,entities)
+    if verbose :
+        print ("len(entities), before=%i, after=%i" % (len_before,len_after))
+    entities = list(map(np.array,entities))
     return entities
 
 def prepare_next_front(front,new_pos,radius_factor=None,set_radius=None,add_order=False) :
