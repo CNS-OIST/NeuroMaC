@@ -22,7 +22,8 @@ terms of interactions with the environment.*
   simulated. As such, growth is purely phenomenological. NeuroMaC is \
   not a simulator of actual neuronal development.
 
-**Warning**: this is a prototype version of NeuroMaC completely implemented in Python.   The current prototype code is freely available.
+**Warning**: this is a prototype version of NeuroMaC completely implemented in Python. \
+  The current prototype code is freely available.
 
 **Reference**: Torben-Nielsen, B., & De Schutter, E. (2014) Context-aware modeling of \
   neuronal morphologies. Frontiers in Neuroanatomy, 8, 92. \
