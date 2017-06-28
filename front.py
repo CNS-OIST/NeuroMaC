@@ -82,7 +82,7 @@ class Front(object) :
         return "Front " + self.entity_name +": " + str(self.xyz)
 
     def __eq__(self,other):
-        if other == None: return False
+        if other is None: return False
             
         if not self.entity_name == other.entity_name: return False
         if not self.algo_name == other.algo_name: return False
@@ -91,8 +91,8 @@ class Front(object) :
         if not self.path_length == other.path_length: return False
         if not self.order == other.order: return False
         if not self.swc_type == other.swc_type: return False
-        if other.soma_pos == None:
-            if not self.soma_pos == None:
+        if other.soma_pos is None:
+            if not self.soma_pos is None:
                 return False
         else:
             #print ("self.soma_pos=", self.soma_pos, ", other.soma_pos=",other.soma_pos)
