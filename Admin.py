@@ -35,6 +35,7 @@ import sqlite3
 import configparser
 import numpy as np
 import _pickle as pickle
+from pathlib import Path
 from front import Front
 from multiprocessing import Process
 import inspect
@@ -169,8 +170,9 @@ class Admin_Agent(object) :
         for option in self.parser.options("substrate") :
             if not option.startswith("dim_") : # then this is an entity
                 val = self.parser.get("substrate", option)
+                print_with_rank("loading substrate entity '%s' from %s" % (option, val))
                 if val.endswith("pkl") :
-                    self.substrate[option] = pickle.load(open(val,"r"))
+                    self.substrate[option] = pickle.load(open(val,"rb"), encoding='latin1')
                 else :
                     print_with_rank("substrate entity (%s) should be given as name of a pickle file" % option)
         time.sleep(0.0)
@@ -180,9 +182,9 @@ class Admin_Agent(object) :
         b0 = np.array(boundary[0])
         b1 = np.array(boundary[1])
         for entity in self.substrate :
-            print_with_rank ("checking entity: ", entity, ", boundary: ", boundary)
+            print_with_rank ("checking entity: %s, boundary: %s" % (entity,boundary))
 
-            # 2014-08-08, make all internals sets of fronts.. bit redundant memory wise, but easy for administration
+            # make all internals sets of fronts.. bit redundant memory wise, but easy for administration
             sub_substrate[entity] = set()
             for ppoint in self.substrate[entity] :
                 point = ppoint[0]
@@ -283,6 +285,11 @@ class Admin_Agent(object) :
                 # retrieve algo to use and how many to deploy
                 no_seeds = self.parser.getint(name,"no_seeds")
                 algorithm_name = self.parser.get(name,"algorithm")
+                # check whether algorithm file can be found before proceeding
+                my_file = Path(algorithm_name + ".py")
+                if not my_file.exists():
+                    print ("Error: cannot find algorithm file '", algorithm_name, "py'")
+                    return 0
                 """ Sample the soma position of the entity and assign \
                     to the correct processor
                 """
@@ -411,7 +418,8 @@ class Admin_Agent(object) :
             # values = (None,pre_front.entity_name,prp[0],prp[1],prp[2],post_front.entity_name,pop[0],pop[1],pop[2])
             values = (None,pre_name,pre_x,pre_y,pre_z,post_name,post_x,post_y,post_z)
             
-            print ("values: ", values)
+            if verbose:
+                print ("values: ", values)
             self.syn_conn.execute("INSERT into synapses VALUES (?,?,?,?,?,?,?,?,?)",values)
 
         
