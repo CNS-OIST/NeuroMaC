@@ -35,7 +35,6 @@ import sqlite3
 import configparser
 import numpy as np
 import _pickle as pickle
-from pathlib import Path
 from front import Front
 from multiprocessing import Process
 import inspect
@@ -223,8 +222,8 @@ class Admin_Agent(object) :
 
         # CHECK: do I still need this clause???
         if  xa*ya*za > (len(self.processor_ids)) :
-            print_with_rank("Not enough processors (%i processors for %i SVs)" \
-              % (len(self.processor_ids),xa*ya*za))
+            print ("Error: not enough processors:", len(self.processor_ids), "processors for", \
+                   xa*ya*za, "SVs")
             return -1 # fetch in __init__
 
         substrate = self._get_substrate_information()
@@ -286,10 +285,11 @@ class Admin_Agent(object) :
                 no_seeds = self.parser.getint(name,"no_seeds")
                 algorithm_name = self.parser.get(name,"algorithm")
                 # check whether algorithm file can be found before proceeding
-                my_file = Path(algorithm_name + ".py")
-                if not my_file.exists():
-                    print ("Error: cannot find algorithm file '", algorithm_name, "py'")
-                    return 0
+                try:
+                    object = __import__(algorithm_name)
+                except:
+                    print ("Error: cannot find algorithm file", algorithm_name)
+                    return -1
                 """ Sample the soma position of the entity and assign \
                     to the correct processor
                 """
@@ -468,7 +468,6 @@ def start_proxy(cfg_file) :
         # Socket facing clients
         frontend = context.socket(zmq.SUB)
         frontend.bind("tcp://*:%i" % parser.getint("system","proxy_sub_port"))
-        #frontend.setsockopt(zmq.SUBSCRIBE, "")
         frontend.setsockopt_string(zmq.SUBSCRIBE, "")
         print_with_rank("PROXY subscribed <-----")
         # Socket facing services
@@ -482,10 +481,20 @@ def start_proxy(cfg_file) :
         print_with_rank("PROXY encountered an error. PROXY down")
     finally:
         print_with_rank("PROXY finally down")
-        frontend.close()
-        backend.close()
-        context.term()
-                    
+        # some of these may not exist if previous try fails
+        try:
+            frontend.close()
+        except:
+            print ("")
+        try:
+            backend.close()
+        except:
+            print ("")
+        try:
+            context.term()
+        except:
+            print ("")
+
 if __name__=="__main__" :
     """
     Start a simulation. Initialize the proxy for message routing,\
