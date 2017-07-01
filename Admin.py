@@ -83,16 +83,19 @@ class Admin_Agent(object) :
         self.processor_ids = range(1,self.total_processors) # start from 1: skip the Admin
         self.summarized_constellations = {} # store summarized constellations based on their self.num / proc id
         # set up communication links for the Admin
-        self._initialize_communication_links()
-        self._setup_DBs()
+        if not self._initialize_communication_links():
+            self._destruction() #_initialize_communication_links failed
+            return # and break out
+        if not self._setup_DBs():
+            self._destruction() #_setup_DBs failed
+            return # and break out
         ret = self._initialize_SVs()
         time.sleep(1) # sleep a second: make sure al SVs are initialized (all messages processed)
-        if ret < 0 :
-            self._destruction()
+        if not ret:
+            self._destruction() #_initialize_SVs failed
             return # and break out
-        ret = self._initialize_GE_beta()
-        if ret < 0 :
-            self._destruction()
+        if not self._initialize_GE_beta():
+            self._destruction() #_initialize_GE_beta failed
             return
         # and continue with the real deal if we haven't been kicked out yet
         self.main_loop()
@@ -126,6 +129,7 @@ class Admin_Agent(object) :
             print_with_rank(str(msg))
             registered = registered + 1
         print_with_rank ("all Subvolumes registered. Proceed!")
+        return 1
 
     def _setup_DBs(self) :
         self.db_file_name = self.parser.get("system","out_db")
@@ -163,6 +167,7 @@ class Admin_Agent(object) :
                                                 post_x real,\
                                                 post_y real,\
                                                 post_z real)''')
+        return 1
 
                                             
     def _get_substrate_information(self) :
@@ -171,10 +176,15 @@ class Admin_Agent(object) :
                 val = self.parser.get("substrate", option)
                 print_with_rank("loading substrate entity '%s' from %s" % (option, val))
                 if val.endswith("pkl") :
-                    self.substrate[option] = pickle.load(open(val,"rb"), encoding='latin1')
+                    try:
+                        self.substrate[option] = pickle.load(open(val,"rb"), encoding='latin1')
+                    except:
+                        print ("Error: cannot find substrate pickle file", val)
+                        return 0
                 else :
                     print_with_rank("substrate entity (%s) should be given as name of a pickle file" % option)
         time.sleep(0.0)
+        return 1
 
     def _get_sub_substrate(self,boundary) :
         sub_substrate = {}
@@ -224,9 +234,10 @@ class Admin_Agent(object) :
         if  xa*ya*za > (len(self.processor_ids)) :
             print ("Error: not enough processors:", len(self.processor_ids), "processors for", \
                    xa*ya*za, "SVs")
-            return -1 # fetch in __init__
+            return 0 # fetch in __init__
 
-        substrate = self._get_substrate_information()
+        if not self._get_substrate_information():
+            return 0
             
         dim_xyz = eval(self.parser.get("substrate","dim_xyz"))
         x_space = dim_xyz[0] / xa
@@ -289,7 +300,7 @@ class Admin_Agent(object) :
                     object = __import__(algorithm_name)
                 except:
                     print ("Error: cannot find algorithm file", algorithm_name)
-                    return -1
+                    return 0
                 """ Sample the soma position of the entity and assign \
                     to the correct processor
                 """
@@ -310,9 +321,9 @@ class Admin_Agent(object) :
                     details["soma_xyz"] = soma_xyz
 
                     dest = self._which_volume_contains_position(soma_xyz)
-                    if dest == -1 :
+                    if not dest:
                         print_with_rank("Could not find subvolume for soma: " + str(soma_xyz))
-                        return -1
+                        return 0
                     print_with_rank("sampled s%i:%s  (D:%i)" % (seed,str(soma_xyz),dest))
                     
                     entity_name = name + "__" +str(entity_id)
@@ -445,7 +456,7 @@ class Admin_Agent(object) :
                (pos[1] < sv[1][1]) and \
                (pos[2] < sv[1][2]) :
                return self.assigned_ids[key]
-        return -1 # if not found, return -1. Fetch somewhere else
+        return 0 # if not found. Fetch somewhere else
                             
     def _destruction(self) :
         """ Shut down the system. End all threads and all MPI instances
