@@ -105,10 +105,6 @@ class Front(object) :
     def __ne__(self,other):
         return not self == other
 
-    def __cmp__(self,other):
-        if self.__eq__(other): return 0
-        else: return -1
-
     # quick and dirty way to create a unique hash, needed to work with sets
     def __key(self):
         # WARNING!!! tuple(self.xyz) potentially not correct with rounding errors...
