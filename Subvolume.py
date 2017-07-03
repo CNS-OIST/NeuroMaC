@@ -182,7 +182,7 @@ class Subvolume_Agent(object) :
         # 2014-08-06
         """
         Special MERGE needed for distal:
-        Onlt use those keys that are NOT in DYNAMIC. (because this information is close)
+        Only use those keys that are NOT in DYNAMIC. (because this information is close)
         Or, make the summary so to only include dynamic, and not distal
         """
         for num in all_summarized_constellations :
@@ -257,7 +257,8 @@ class Subvolume_Agent(object) :
            else:
                d1[key] = d2[key]
         return d1
-                
+    
+    # initialize subvolume. message contains: boundary,neighbors,sub_substrate,virtual_substrate
     def _process_init_sv(self,message) :
         # initialize the seed, make the seed unqiue by adding the SV ID
         np.random.seed(self.parser.getint("system","seed")+self.num)
