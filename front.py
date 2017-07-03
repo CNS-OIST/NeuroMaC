@@ -59,21 +59,21 @@ class Front(object) :
            3D vector
         radius : float
         """
-        #: The name given to and entity
-        #: This name is to be used to query the substrate
+        # The name given to an entity ~ a neuron
+        # This name is to be used to query the substrate
         self.entity_name = entity_name
-        #: Growth-rules to use
+        # Growth-rules to use
         self.algo_name = algo_name
-        #: 3D location
+        # 3D location
         self.xyz = xyz
-        #: Radius of the front
-        #: Consecutive fronts form a frustrum or cylinder
+        # Radius of the front
+        # Consecutive fronts form a frustrum or cylinder
         self.radius = radius
-        #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
+        # *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.path_length= path_length
-        #: *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
+        # *Not directly set*. Attrribute set by :py:func:`growth_procs.prepare_next_front`
         self.order = order
-        #:  SWC-type as define in Cannon et al 1998
+        #  SWC-type as defined in Cannon et al 1998
         self.swc_type = 7 # SWC-type field (custom value)
         self.soma_pos =None
         self.parent = None
