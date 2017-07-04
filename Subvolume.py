@@ -342,7 +342,7 @@ class Subvolume_Agent(object) :
                 # store the update information, likely in my_constellation?
                 update_info = ret[1]
                 # print ("update_info: ", update_info)
-                entity_name = update_info.keys()[0]
+                entity_name = list(update_info.keys())[0]
                 entity_front = update_info[entity_name] # 2014-08-11
                 
                 # # 2014-02-19
