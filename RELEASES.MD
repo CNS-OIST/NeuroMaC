@@ -7,3 +7,7 @@ Python 3.6 compatibility
 Verbose control of console output
 New error messages
 Added example scripts from 2014 paper
+
+Version 0.2.1 (2017-7)
+==========================
+More Python 3.6 compatibility
