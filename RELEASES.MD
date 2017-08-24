@@ -1,8 +1,12 @@
 NeuroMaC Release Notes
 
-Version 0.1 (2014)
+Version 0.2.2 (2017-8)
 ==========================
-Original Python 2.7 version
+Verbose control for virtual substrate
+
+Version 0.2.1 (2017-7)
+==========================
+More Python 3.6 compatibility
 
 Version 0.2.0 (2017-6)
 ==========================
@@ -12,10 +16,9 @@ Verbose control of console output
 New error messages
 Added example scripts from 2014 paper
 
-Version 0.2.1 (2017-7)
+Version 0.1 (2014)
 ==========================
-More Python 3.6 compatibility
+Original Python 2.7 version
 
-Version 0.2.2 (2017-8)
-==========================
-Verbose control for virtual substrate
+
+
