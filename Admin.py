@@ -210,15 +210,15 @@ class Admin_Agent(object) :
         for name,value in self.parser.items("substrate"):
             if name.startswith("virtual"):
                 virtual_name = name.split("_")[1]
-                print_with_rank  ("Found virtual: ",virtual_name)
+                if verbose:
+                    print_with_rank  ("Found virtual: ",virtual_name)
                 virtual_substrate.update({virtual_name:eval(self.parser.get("substrate",name))})
 
-        if virtual_substrate == {}:
-            print_with_rank ("No virtual substrates found")
-            #time.sleep(5)
-        else:
-            print_with_rank ("virtual_substrate:\n",virtual_substrate)
-            #time.sleep(5)
+        if verbose:
+            if virtual_substrate == {}:
+                print_with_rank ("No virtual substrates found")
+            else:
+                print_with_rank ("virtual_substrate:\n",virtual_substrate)
         return virtual_substrate
                                             
     def _initialize_SVs(self) :

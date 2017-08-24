@@ -25,6 +25,8 @@ import numpy as np
 
 import time # only for testing
 
+verbose = 0
+
 class Front(object) :
     """
     Key component of NeuroMac. A Front is a phenomenological \
@@ -151,7 +153,8 @@ class Front(object) :
                 b1 = np.array(rectangle[1])
                 if np.all(self.xyz>b0) and np.all(self.xyz<b1): # works for rectangle only...
                     setattr(self,key,x)
-                    print (">>>> FOUND: ",key," = ",x)
+                    if verbose:
+                        print (">>>> FOUND: ",key," = ",x)
                     
 
         # outsource the real call to extend a front
